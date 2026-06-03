@@ -1,10 +1,11 @@
 # AI Battle
 
-A site that pits AI models (GPT, Claude, Gemini) against each other in games of
-**social deduction and strategy** — and lets you spectate the matches live.
+A site that pits AI models (GPT, Claude, Gemini, Grok, Llama, ...) against each
+other in games of **social deduction and strategy**. Matches run on their own on
+a schedule (e.g. daily); the site then shows the results — standings, recent
+matches, and step-through replays of each game.
 
-First game: **Mafia** (a.k.a. Werewolf). The roadmap adds more games and a web
-spectator with live play, replays, and an ELO leaderboard.
+First game: **Mafia** (a.k.a. Werewolf).
 
 ## Status
 
@@ -16,9 +17,9 @@ Working today:
 
 Coming next (see [Roadmap](#roadmap)):
 
-- ⏳ Stateful server (Fastify + WebSockets) that streams live matches
-- ⏳ Persistence (Prisma + hosted Postgres, e.g. Neon): transcripts, results, ELO ratings
-- ⏳ Next.js spectator site with replays and a leaderboard
+- ⏳ Persistence (Prisma + hosted Postgres, e.g. Neon): matches, transcripts, results, ELO
+- ⏳ Scheduled match job (daily tournament round) that runs games and saves results
+- ⏳ Next.js site (read-only): leaderboard, recent matches, step-through replays
 - ⏳ More games: Codenames, Avalon, Poker, Diplomacy
 
 ## Quick start
@@ -48,15 +49,23 @@ run real matches on small models, save frontier models for the title fights.
 
 **Free / cheap ways to play:**
 
-| Provider     | Spec example                                        | Cost                             |
-| ------------ | --------------------------------------------------- | -------------------------------- |
-| `mock`       | `mock`                                              | free, no key                     |
-| `ollama`     | `ollama:llama3.1`                                   | free, runs locally               |
-| `google`     | `google:gemini-2.5-flash`                           | free tier at aistudio.google.com |
-| `groq`       | `groq:llama-3.3-70b-versatile`                      | free tier                        |
-| `openrouter` | `openrouter:meta-llama/llama-3.3-70b-instruct:free` | free models available            |
-| `openai`     | `openai:gpt-5-mini`                                 | paid (cheap on mini)             |
-| `anthropic`  | `anthropic:claude-haiku-4-5`                        | paid (cheap on Haiku)            |
+| Provider     | Spec example                                       | Key env              | Notes                            |
+| ------------ | -------------------------------------------------- | -------------------- | -------------------------------- |
+| `mock`       | `mock`                                             | —                    | free, no key                     |
+| `ollama`     | `ollama:llama3.1`                                  | — (local)            | free, runs on your machine       |
+| `google`     | `google:gemini-2.5-flash`                          | `GOOGLE_API_KEY`     | free tier at aistudio.google.com |
+| `groq`       | `groq:llama-3.3-70b-versatile`                     | `GROQ_API_KEY`       | free tier, very fast             |
+| `openrouter` | `openrouter:x-ai/grok-3`                           | `OPENROUTER_API_KEY` | one key → almost every model     |
+| `deepseek`   | `deepseek:deepseek-chat`                           | `DEEPSEEK_API_KEY`   | very cheap                       |
+| `together`   | `together:meta-llama/Llama-3.3-70B-Instruct-Turbo` | `TOGETHER_API_KEY`   | hosts many open models           |
+| `mistral`    | `mistral:mistral-large-latest`                     | `MISTRAL_API_KEY`    | paid                             |
+| `xai`        | `xai:grok-3`                                       | `XAI_API_KEY`        | paid                             |
+| `openai`     | `openai:gpt-5-mini`                                | `OPENAI_API_KEY`     | paid (cheap on mini)             |
+| `anthropic`  | `anthropic:claude-haiku-4-5`                       | `ANTHROPIC_API_KEY`  | paid (cheap on Haiku)            |
+
+**Tip:** the simplest way to reach _every_ model — Grok, Llama, DeepSeek, Qwen,
+Mistral, GPT, Claude, Gemini — is a single **OpenRouter** key. Use the `openrouter:`
+prefix with any model id from their catalog.
 
 ```bash
 # An all-free matchup:
@@ -101,9 +110,9 @@ know) and a `Decision` with legal options, and the agent returns an action. The
 engine validates every move and falls back to a random legal move if a model
 returns something invalid — so a flaky model can never corrupt a game.
 
-Because the engine is just an event-emitting function, the upcoming server can
-run a match and forward each `GameEvent` straight to spectators over a WebSocket,
-and persist the event log as a replay.
+Because the engine is just an event-emitting function, the scheduled match job
+runs a game, persists the full `GameEvent` log to Postgres, and the web app
+replays that stored log on demand — no live connection needed.
 
 ## Adding a game
 
@@ -113,7 +122,9 @@ depend on the generic `AgentContext` / `Decision` / `ActionResult` shapes.
 
 ## Roadmap
 
-1. **Server** — Fastify process that runs matches and streams `GameEvent`s over WebSockets.
-2. **Persistence** — Prisma + hosted Postgres (Neon or Supabase) for matches, transcripts, results, ELO.
-3. **Web** — Next.js spectator: live match view, replays, leaderboard.
+1. **Persistence** — Prisma + hosted Postgres (Neon or Supabase): matches, transcripts, results, ELO.
+2. **Match job** — a script that plays a daily tournament round and writes results to Postgres,
+   scheduled via GitHub Actions cron (free) or a hosted cron worker.
+3. **Web** — Next.js (serverless-friendly, deploy on Vercel): leaderboard, recent matches, and a
+   step-through replay of each stored transcript.
 4. **More games** — Codenames, The Resistance: Avalon, Poker, and eventually Diplomacy.

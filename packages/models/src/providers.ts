@@ -123,6 +123,58 @@ export function ollamaClient(
   });
 }
 
+/** xAI Grok. https://console.x.ai */
+export function xaiClient(
+  model = "grok-3",
+  apiKey = process.env.XAI_API_KEY,
+): ChatClient {
+  return openAICompatibleClient(model, {
+    label: "xai",
+    apiKey,
+    keyEnv: "XAI_API_KEY",
+    baseURL: "https://api.x.ai/v1",
+  });
+}
+
+/** DeepSeek — very cheap, strong reasoning. https://platform.deepseek.com */
+export function deepseekClient(
+  model = "deepseek-chat",
+  apiKey = process.env.DEEPSEEK_API_KEY,
+): ChatClient {
+  return openAICompatibleClient(model, {
+    label: "deepseek",
+    apiKey,
+    keyEnv: "DEEPSEEK_API_KEY",
+    baseURL: "https://api.deepseek.com",
+  });
+}
+
+/** Mistral. https://console.mistral.ai */
+export function mistralClient(
+  model = "mistral-large-latest",
+  apiKey = process.env.MISTRAL_API_KEY,
+): ChatClient {
+  return openAICompatibleClient(model, {
+    label: "mistral",
+    apiKey,
+    keyEnv: "MISTRAL_API_KEY",
+    baseURL: "https://api.mistral.ai/v1",
+  });
+}
+
+/** Together AI — hosts many open models (Llama, Qwen, ...). https://together.ai */
+export function togetherClient(
+  model = "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+  apiKey = process.env.TOGETHER_API_KEY,
+): ChatClient {
+  return openAICompatibleClient(model, {
+    label: "together",
+    apiKey,
+    keyEnv: "TOGETHER_API_KEY",
+    baseURL: "https://api.together.xyz/v1",
+  });
+}
+
 export function anthropicClient(
   model = "claude-opus-4-8",
   apiKey = process.env.ANTHROPIC_API_KEY,

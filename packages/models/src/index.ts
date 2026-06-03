@@ -3,11 +3,15 @@ import { llmAgent } from "./llm.js";
 import { mockAgent } from "./mock.js";
 import {
   anthropicClient,
+  deepseekClient,
   googleClient,
   groqClient,
+  mistralClient,
   ollamaClient,
   openaiClient,
   openrouterClient,
+  togetherClient,
+  xaiClient,
 } from "./providers.js";
 
 export { mockAgent } from "./mock.js";
@@ -19,6 +23,10 @@ export {
   groqClient,
   openrouterClient,
   ollamaClient,
+  xaiClient,
+  deepseekClient,
+  mistralClient,
+  togetherClient,
 } from "./providers.js";
 
 /**
@@ -55,6 +63,14 @@ export function agentFromSpec(spec: string, displayName?: string): Agent {
       return llmAgent(openrouterClient(model), label);
     case "ollama":
       return llmAgent(ollamaClient(model), label);
+    case "xai":
+      return llmAgent(xaiClient(model), label);
+    case "deepseek":
+      return llmAgent(deepseekClient(model), label);
+    case "mistral":
+      return llmAgent(mistralClient(model), label);
+    case "together":
+      return llmAgent(togetherClient(model), label);
     default:
       throw new Error(`Unknown model provider "${provider}" in spec "${spec}"`);
   }
