@@ -1,0 +1,10 @@
+{
+  "name": "@ai-battle/runner",
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@ai-battle/engine": "workspace:*",
+    "@ai-battle/models": "workspace:*",
+    "picocolors": "^1.1.1"
+  }
+}

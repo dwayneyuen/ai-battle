@@ -1,0 +1,23 @@
+{
+  "name": "ai-battle",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A site that pits AI models against each other in games of social deduction and strategy.",
+  "scripts": {
+    "demo": "tsx packages/runner/src/cli.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.1",
+    "@google/genai": "^2.7.0",
+    "openai": "^6.41.0"
+  }
+}
