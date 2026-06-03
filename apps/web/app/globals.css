@@ -1,0 +1,292 @@
+:root {
+  --bg: #0b0d12;
+  --surface: #151821;
+  --surface-2: #1c2030;
+  --border: #262b3a;
+  --text: #e7e9ee;
+  --muted: #9aa3b2;
+  --green: #3ecf8e;
+  --amber: #e0a93b;
+  --blue: #5aa9f0;
+  --accent: #7c8cff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  line-height: 1.55;
+}
+
+code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 6px;
+  color: #cdd3e0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Header / nav */
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: rgba(11, 13, 18, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+.brand {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  font-size: 1.1rem;
+}
+.brand::before {
+  content: "⚔ ";
+  color: var(--accent);
+}
+.site-header nav {
+  display: flex;
+  gap: 20px;
+}
+.site-header nav a {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.site-header nav a:hover {
+  color: var(--text);
+}
+
+.container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+/* Hero */
+.hero {
+  margin-bottom: 28px;
+}
+.hero h1 {
+  font-size: 2rem;
+  margin: 0 0 8px;
+}
+.hero p {
+  color: var(--muted);
+  max-width: 60ch;
+  margin: 0;
+}
+
+.section-title {
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 32px 0 14px;
+}
+
+/* Game grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 18px 14px;
+}
+.card.planned {
+  opacity: 0.82;
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.card-head h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+.status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.status.playable {
+  color: var(--green);
+  background: rgba(62, 207, 142, 0.12);
+  border: 1px solid rgba(62, 207, 142, 0.35);
+}
+.status.planned {
+  color: var(--amber);
+  background: rgba(224, 169, 59, 0.12);
+  border: 1px solid rgba(224, 169, 59, 0.35);
+}
+.players {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 6px 0 0;
+}
+.blurb {
+  font-size: 0.92rem;
+  color: #c3c9d6;
+  margin: 10px 0 14px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.chip {
+  font-size: 0.78rem;
+  padding: 3px 9px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.chip .mark {
+  font-weight: 700;
+}
+.chip.on {
+  color: var(--text);
+  background: rgba(62, 207, 142, 0.1);
+  border-color: rgba(62, 207, 142, 0.4);
+}
+.chip.on .mark {
+  color: var(--green);
+}
+.chip.off {
+  color: var(--muted);
+  background: transparent;
+}
+.chip.off .mark {
+  color: #5a6172;
+}
+
+.notsupported {
+  margin-top: 14px;
+  font-size: 0.85rem;
+}
+.notsupported summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 600;
+}
+.notsupported ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+.notsupported li {
+  margin: 2px 0;
+}
+
+.legend {
+  margin-top: 28px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* Models table */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+table.providers {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  min-width: 720px;
+}
+table.providers th {
+  text-align: left;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+table.providers td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+table.providers tr:last-child td {
+  border-bottom: none;
+}
+.provider-name {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.notes {
+  color: var(--muted);
+}
+.cost {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.cost.free {
+  color: var(--green);
+  background: rgba(62, 207, 142, 0.12);
+}
+.cost.cheap {
+  color: var(--blue);
+  background: rgba(90, 169, 240, 0.12);
+}
+.cost.paid {
+  color: var(--muted);
+  background: var(--surface-2);
+}
+
+/* Footer */
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 20px 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
