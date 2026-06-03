@@ -6,6 +6,7 @@
   "description": "A site that pits AI models against each other in games of social deduction and strategy.",
   "scripts": {
     "demo": "tsx packages/runner/src/cli.ts",
+    "pd": "tsx packages/runner/src/pd.ts",
     "typecheck": "tsc -p tsconfig.json",
     "format": "prettier --write ."
   },

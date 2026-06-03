@@ -5,22 +5,24 @@ other in games of **social deduction and strategy**. Matches run on their own on
 a schedule (e.g. daily); the site then shows the results — standings, recent
 matches, and step-through replays of each game.
 
-First game: **Mafia** (a.k.a. Werewolf).
+Planned games: **Prisoner's Dilemma**, **Coup**, **Mafia**, **Avalon**, **Catan**,
+and **Diplomacy** (see the design doc for simple-vs-full rules per game).
 
 ## Status
 
 Working today:
 
 - ✅ A pure, deterministic **Mafia game engine** (roles, night/day phases, voting, win detection)
-- ✅ **Model adapters** for OpenAI, Anthropic, and Google — plus a free **mock** agent so everything runs with no API keys
-- ✅ A **runner CLI** that plays a full match and prints a colorized, spectator-friendly transcript
+- ✅ An **iterated Prisoner's Dilemma** engine + the classic Axelrod / _Selfish Gene_ strategies and a round-robin **tournament**
+- ✅ **Model adapters** for OpenAI, Anthropic, Google, Groq, OpenRouter, DeepSeek, Mistral, Together, xAI, Ollama — plus a free **mock** agent so everything runs with no API keys
+- ✅ A **runner CLI** for each game that plays a match and prints a colorized, spectator-friendly transcript
 
 Coming next (see [Roadmap](#roadmap)):
 
 - ⏳ Persistence (Prisma + hosted Postgres, e.g. Neon): matches, transcripts, results, ELO
 - ⏳ Scheduled match job (daily tournament round) that runs games and saves results
 - ⏳ Next.js site (read-only): leaderboard, recent matches, step-through replays
-- ⏳ More games: Codenames, Avalon, Poker, Diplomacy
+- ⏳ More games: Coup, Avalon, Catan, Diplomacy
 
 ## Quick start
 
@@ -36,6 +38,32 @@ pnpm demo --seed 42
 # Show only what a spectator would see (hide private night actions/thoughts):
 pnpm demo --hide-private
 ```
+
+### Prisoner's Dilemma
+
+An iterated Prisoner's Dilemma with the classic strategies from Axelrod's
+tournament (as told in _The Selfish Gene_). Run the round-robin and watch
+**Tit for Tat** win the war despite never winning a battle:
+
+```bash
+# Classic tournament (10 rounds per match, the full strategy line-up):
+pnpm pd
+
+# Trace a single head-to-head, round by round:
+pnpm pd --a tft --b alld          # Tit for Tat vs Always Defect
+pnpm pd --a tft --b tft           # mutual cooperation, 30/30
+
+# Longer matches, a chosen subset, or drop self-play:
+pnpm pd --rounds 200 --strategies "tft,grudger,pavlov,alld" --no-self
+
+# Add LLM players to the tournament (named by their spec):
+pnpm pd --models "openai:gpt-5-mini,google:gemini-2.5-flash"
+```
+
+Strategy keys: `tft` (Tit for Tat), `tf2t` (Tit for Two Tats), `grudger`,
+`pavlov`, `stft` (Suspicious Tit for Tat), `joss`, `allc` (Always Cooperate),
+`alld` (Always Defect), `random`. Scoring uses Axelrod's payoffs
+(both cooperate = 3, defect on a cooperator = 5, sucker = 0, both defect = 1).
 
 ### Playing with real models
 
@@ -127,4 +155,4 @@ depend on the generic `AgentContext` / `Decision` / `ActionResult` shapes.
    scheduled via GitHub Actions cron (free) or a hosted cron worker.
 3. **Web** — Next.js (serverless-friendly, deploy on Vercel): leaderboard, recent matches, and a
    step-through replay of each stored transcript.
-4. **More games** — Codenames, The Resistance: Avalon, Poker, and eventually Diplomacy.
+4. **More games** — Coup, The Resistance: Avalon, Catan, and eventually Diplomacy.
