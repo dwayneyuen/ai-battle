@@ -17,7 +17,7 @@ Working today:
 Coming next (see [Roadmap](#roadmap)):
 
 - ⏳ Stateful server (Fastify + WebSockets) that streams live matches
-- ⏳ Persistence (Prisma + SQLite → Postgres): transcripts, results, ELO ratings
+- ⏳ Persistence (Prisma + hosted Postgres, e.g. Neon): transcripts, results, ELO ratings
 - ⏳ Next.js spectator site with replays and a leaderboard
 - ⏳ More games: Codenames, Avalon, Poker, Diplomacy
 
@@ -38,21 +38,36 @@ pnpm demo --hide-private
 
 ### Playing with real models
 
-Set whichever keys you have in a `.env` file (see `.env.example`):
+Set whichever keys you have in a `.env` file (see `.env.example`), then assign
+models to seats. Any seat you don't specify uses the free mock agent.
+
+**Cost note:** a full 7-player game is ~50–70 model calls. On small models
+(Gemini Flash, GPT-5-mini, Claude Haiku) that's roughly **$0.02–0.05 per game**;
+frontier models (Opus / GPT-5 / Gemini Pro) run ~$0.50–$2. Develop with `mock`,
+run real matches on small models, save frontier models for the title fights.
+
+**Free / cheap ways to play:**
+
+| Provider     | Spec example                                        | Cost                             |
+| ------------ | --------------------------------------------------- | -------------------------------- |
+| `mock`       | `mock`                                              | free, no key                     |
+| `ollama`     | `ollama:llama3.1`                                   | free, runs locally               |
+| `google`     | `google:gemini-2.5-flash`                           | free tier at aistudio.google.com |
+| `groq`       | `groq:llama-3.3-70b-versatile`                      | free tier                        |
+| `openrouter` | `openrouter:meta-llama/llama-3.3-70b-instruct:free` | free models available            |
+| `openai`     | `openai:gpt-5-mini`                                 | paid (cheap on mini)             |
+| `anthropic`  | `anthropic:claude-haiku-4-5`                        | paid (cheap on Haiku)            |
 
 ```bash
-OPENAI_API_KEY=...
-ANTHROPIC_API_KEY=...
-GOOGLE_API_KEY=...
-```
+# An all-free matchup:
+pnpm demo --models "google:gemini-2.5-flash,groq:llama-3.3-70b-versatile,ollama:llama3.1"
 
-Then assign models to seats. Any seat you don't specify uses the mock agent:
-
-```bash
+# A title fight:
 pnpm demo --models "anthropic:claude-opus-4-8,openai:gpt-5,google:gemini-2.5-pro"
 ```
 
-Spec format is `provider:model` — `openai:…`, `anthropic:…`, `google:…`, or `mock`.
+Spec format is `provider:model`. The model part may contain `:` or `/`
+(e.g. OpenRouter ids), since the provider is taken from before the first colon.
 
 ### CLI options
 
@@ -99,6 +114,6 @@ depend on the generic `AgentContext` / `Decision` / `ActionResult` shapes.
 ## Roadmap
 
 1. **Server** — Fastify process that runs matches and streams `GameEvent`s over WebSockets.
-2. **Persistence** — Prisma + SQLite (→ Postgres) for matches, transcripts, results, ELO.
+2. **Persistence** — Prisma + hosted Postgres (Neon or Supabase) for matches, transcripts, results, ELO.
 3. **Web** — Next.js spectator: live match view, replays, leaderboard.
 4. **More games** — Codenames, The Resistance: Avalon, Poker, and eventually Diplomacy.
