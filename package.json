@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.33.0",
   "description": "A site that pits AI models against each other in games of social deduction and strategy.",
   "scripts": {
     "demo": "tsx packages/runner/src/cli.ts",

@@ -128,8 +128,14 @@ packages/
   models/   @ai-battle/models   Adapter from an LLM to a game Agent. One ChatClient
                                 interface per provider (OpenAI/Anthropic/Google) plus
                                 a mock. SDKs load lazily so the core runs without them.
-  runner/   @ai-battle/runner   CLI that wires agents to seats, runs a match, and
-                                prints the event stream.
+  catalog/  @ai-battle/catalog  Single source of truth for supported games (with
+                                feature matrix + planned games) and model providers.
+                                The site and `pnpm catalog` both render it.
+  runner/   @ai-battle/runner   CLIs that wire agents to seats, run a match, and
+                                print the event stream (plus `pnpm catalog`).
+apps/
+  web/      Next.js site (read-only) that renders the catalog; runs as a
+            long-running server on the always-on host (see docs/HOSTING.md).
 ```
 
 The key seam is the **`Agent`** interface (`packages/engine/src/mafia/types.ts`):
@@ -150,9 +156,11 @@ depend on the generic `AgentContext` / `Decision` / `ActionResult` shapes.
 
 ## Roadmap
 
-1. **Persistence** — Prisma + hosted Postgres (Neon or Supabase): matches, transcripts, results, ELO.
-2. **Match job** — a script that plays a daily tournament round and writes results to Postgres,
-   scheduled via GitHub Actions cron (free) or a hosted cron worker.
-3. **Web** — Next.js (serverless-friendly, deploy on Vercel): leaderboard, recent matches, and a
+1. **Hosting** — an always-on backend (Render/Railway) running one persistent Node service plus a
+   managed Postgres. See [docs/HOSTING.md](docs/HOSTING.md); a `render.yaml` blueprint is included.
+2. **Persistence** — Prisma + the managed Postgres: matches, transcripts, results, ELO.
+3. **Match job** — a scheduled job (Render Cron / Railway cron) that plays a tournament round and
+   writes results to Postgres.
+4. **Web** — the Next.js app grows from the catalog into leaderboard, recent matches, and a
    step-through replay of each stored transcript.
-4. **More games** — Coup, The Resistance: Avalon, Catan, and eventually Diplomacy.
+5. **More games** — Coup, The Resistance: Avalon, Catan, and eventually Diplomacy.
