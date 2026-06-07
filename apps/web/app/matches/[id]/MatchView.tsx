@@ -48,6 +48,9 @@ export function MatchView({ id }: { id: string }) {
   const [showPrivate, setShowPrivate] = useState(true);
   const [showPrompts, setShowPrompts] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  // Whether the reader is parked at the bottom. We only auto-scroll to new
+  // messages while this is true, so scrolling up to read is never interrupted.
+  const stick = useRef(true);
 
   // Re-runs when showPrompts toggles so it refetches with/without ?calls=1
   // (even for a finished game, where the poll loop has already stopped).
@@ -77,8 +80,23 @@ export function MatchView({ id }: { id: string }) {
     };
   }, [id, showPrompts]);
 
+  // Track whether the reader is at (or near) the bottom of the page. Updated on
+  // scroll rather than after render, so we know their intent *before* new
+  // messages grow the page.
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    function onScroll() {
+      stick.current =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 120;
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (stick.current) {
+      endRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [snap?.events.length]);
 
   if (notFound) return <p>Match not found.</p>;
