@@ -10,23 +10,13 @@ import {
 } from "@ai-battle/engine";
 import { agentFromSpec, rollOffAgentFromSpec } from "@ai-battle/models";
 import { recordMatch, type ModelCallInput } from "@ai-battle/db";
+import { MODELS } from "@ai-battle/catalog";
 
 export type GameId = "mafia" | "rolloff";
 
-// Each seat is named after the model it runs — a pun that decodes to the model.
-// Slugs verified against the live OpenRouter catalog.
-const ROSTER = [
-  { name: "Gepetto", spec: "openrouter:openai/gpt-5-mini" }, // G-e-P-e-T-to
-  { name: "Jiminy", spec: "openrouter:google/gemini-2.5-flash" }, // ~ Gemini
-  { name: "Claude", spec: "openrouter:anthropic/claude-haiku-4.5" }, // literally
-  { name: "Lamar", spec: "openrouter:meta-llama/llama-3.3-70b-instruct" }, // Llama
-  { name: "Deepak", spec: "openrouter:deepseek/deepseek-chat-v3.1" }, // DeepSeek
-  { name: "Quinn", spec: "openrouter:qwen/qwen3.6-flash" }, // ~ Qwen
-  {
-    name: "Misty",
-    spec: "openrouter:mistralai/mistral-small-3.2-24b-instruct",
-  }, // Mistral
-];
+// The roster is the catalog's model list (single source of truth) — one model
+// per family, each under a pun-name that decodes to it.
+const ROSTER = MODELS.map((m) => ({ name: m.name, spec: m.spec }));
 
 interface Seat {
   seatId: string;

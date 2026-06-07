@@ -331,6 +331,76 @@ export const PROVIDERS: ProviderInfo[] = [
   },
 ];
 
+// --- The competing models (the roster that actually plays) -----------------
+
+/** One competitor: a model fielded under a pun-name that decodes to it. */
+export interface ModelInfo {
+  /** In-game seat name — a pun on the model. */
+  name: string;
+  /** Model family / maker. */
+  family: string;
+  /** Human-friendly model name. */
+  model: string;
+  /** Full spec used to reach it (we route everything via OpenRouter). */
+  spec: string;
+}
+
+/**
+ * The roster: one model per distinct family. These are the models that actually
+ * compete and appear on the leaderboard — reached through OpenRouter, with slugs
+ * verified against the live catalog.
+ */
+export const MODELS: ModelInfo[] = [
+  {
+    name: "Gepetto",
+    family: "OpenAI",
+    model: "GPT-5.4 mini",
+    spec: "openrouter:openai/gpt-5.4-mini",
+  },
+  {
+    name: "Jiminy",
+    family: "Google",
+    model: "Gemini 3.5 Flash",
+    spec: "openrouter:google/gemini-3.5-flash",
+  },
+  {
+    name: "Claude",
+    family: "Anthropic",
+    model: "Claude Haiku 4.5",
+    spec: "openrouter:anthropic/claude-haiku-4.5",
+  },
+  {
+    name: "Lamar",
+    family: "Meta",
+    model: "Llama 3.3 70B",
+    spec: "openrouter:meta-llama/llama-3.3-70b-instruct",
+  },
+  {
+    name: "Deepak",
+    family: "DeepSeek",
+    model: "DeepSeek V3.1",
+    spec: "openrouter:deepseek/deepseek-chat-v3.1",
+  },
+  {
+    name: "Quinn",
+    family: "Qwen",
+    model: "Qwen3.6 Flash",
+    spec: "openrouter:qwen/qwen3.6-flash",
+  },
+  {
+    name: "Misty",
+    family: "Mistral",
+    model: "Mistral Small 3.2",
+    spec: "openrouter:mistralai/mistral-small-3.2-24b-instruct",
+  },
+  {
+    name: "Brock",
+    family: "xAI",
+    model: "Grok 4.20",
+    spec: "openrouter:x-ai/grok-4.20",
+  },
+];
+
 // --- Convenience -----------------------------------------------------------
 
 export const playableGames = () => GAMES.filter((g) => g.status === "playable");
