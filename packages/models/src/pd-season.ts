@@ -1,7 +1,7 @@
 import type { Move, MoveContext, Strategy } from "@ai-battle/engine";
-import { clientFromSpec } from "./clients.js";
-import type { ChatClient } from "./llm.js";
-import { mockChatClient } from "./mock.js";
+import { clientFromSpec } from "./clients";
+import type { ChatClient } from "./llm";
+import { mockChatClient } from "./mock";
 
 /**
  * The "season" framing of the Iterated Prisoner's Dilemma, where the interesting

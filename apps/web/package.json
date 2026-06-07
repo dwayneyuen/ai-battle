@@ -9,6 +9,9 @@
   },
   "dependencies": {
     "@ai-battle/catalog": "workspace:*",
+    "@ai-battle/db": "workspace:*",
+    "@ai-battle/engine": "workspace:*",
+    "@ai-battle/models": "workspace:*",
     "next": "^16.2.7",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"

@@ -35,6 +35,15 @@ importers:
       "@ai-battle/catalog":
         specifier: workspace:*
         version: link:../../packages/catalog
+      "@ai-battle/db":
+        specifier: workspace:*
+        version: link:../../packages/db
+      "@ai-battle/engine":
+        specifier: workspace:*
+        version: link:../../packages/engine
+      "@ai-battle/models":
+        specifier: workspace:*
+        version: link:../../packages/models
       next:
         specifier: ^16.2.7
         version: 16.2.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -77,6 +86,9 @@ importers:
       "@ai-battle/engine":
         specifier: workspace:*
         version: link:../engine
+      openai:
+        specifier: ^6.41.0
+        version: 6.41.0(ws@8.21.0)
 
   packages/runner:
     dependencies:

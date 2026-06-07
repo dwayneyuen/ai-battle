@@ -36,7 +36,25 @@ export interface MatchEventInput {
   visibleTo?: string[];
 }
 
+export interface ModelCallInput {
+  idx: number;
+  seatId: string;
+  seatName: string;
+  decisionType: string;
+  day: number;
+  phase: string;
+  system: string;
+  user: string;
+  raw: string;
+  parsed?: unknown;
+  thoughts?: string;
+  valid: boolean;
+  latencyMs?: number;
+}
+
 export interface RecordMatchInput {
+  /** Optional explicit id (so the in-memory live match and DB row share one id). */
+  id?: string;
   game: string;
   seed?: string;
   status: "completed" | "void";
@@ -45,6 +63,8 @@ export interface RecordMatchInput {
   config?: unknown;
   players: MatchPlayerInput[];
   events: MatchEventInput[];
+  /** Full per-call model logs (prompt seen, raw response, parsed action). */
+  modelCalls?: ModelCallInput[];
 }
 
 // --- ELO -------------------------------------------------------------------
@@ -79,6 +99,7 @@ export async function recordMatch(input: RecordMatchInput): Promise<string> {
 
     const match = await tx.match.create({
       data: {
+        id: input.id,
         game: input.game,
         seed: input.seed,
         status: input.status,
@@ -86,6 +107,23 @@ export async function recordMatch(input: RecordMatchInput): Promise<string> {
         reason: input.reason,
         config: (input.config ?? undefined) as never,
         finishedAt: new Date(),
+        calls: {
+          create: (input.modelCalls ?? []).map((c) => ({
+            idx: c.idx,
+            seatId: c.seatId,
+            seatName: c.seatName,
+            decisionType: c.decisionType,
+            day: c.day,
+            phase: c.phase,
+            systemPrompt: c.system,
+            userPrompt: c.user,
+            rawResponse: c.raw,
+            parsed: (c.parsed ?? undefined) as never,
+            thoughts: c.thoughts,
+            valid: c.valid,
+            latencyMs: c.latencyMs,
+          })),
+        },
         players: {
           create: input.players.map((p) => ({
             modelId: seat.get(p.seatId)!.modelId,

@@ -83,15 +83,19 @@ export function llmAgent(client: ChatClient, displayName?: string): Agent {
   return {
     name: displayName ?? client.label,
     async decide(ctx) {
+      const system = RULES;
+      const user = buildUserPrompt(ctx);
+      const t0 = Date.now();
       let raw: string;
       try {
-        raw = await client.complete(RULES, buildUserPrompt(ctx));
+        raw = await client.complete(system, user);
       } catch (err) {
         // API/network failure is infrastructure, not the model's fault → void.
         throw new TransportError(
           `${client.label} call failed: ${(err as Error).message}`,
         );
       }
+      const latencyMs = Date.now() - t0;
       const parsed = parseJson(raw);
       return {
         target: parsed.target,
@@ -99,6 +103,7 @@ export function llmAgent(client: ChatClient, displayName?: string): Agent {
         urgency:
           typeof parsed.urgency === "number" ? parsed.urgency : undefined,
         thoughts: parsed.thoughts,
+        diagnostics: { system, user, raw, latencyMs },
       };
     },
   };

@@ -1,5 +1,5 @@
 import { mulberry32, pick, type Agent } from "@ai-battle/engine";
-import type { ChatClient } from "./llm.js";
+import type { ChatClient } from "./llm";
 
 const FLAVOR = [
   "I'm not sure yet, but {p} has been awfully quiet.",

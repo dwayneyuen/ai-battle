@@ -1,4 +1,4 @@
-import { mulberry32 } from "../rng.js";
+import { mulberry32 } from "../rng";
 import {
   CLASSIC_PAYOFF,
   type MatchResult,
@@ -11,7 +11,7 @@ import {
   type Strategy,
   type TournamentConfig,
   type TournamentResult,
-} from "./types.js";
+} from "./types";
 
 /** Points awarded to [A, B] for a single round. */
 function scoreRound(a: Move, b: Move, p: Payoff): [number, number] {

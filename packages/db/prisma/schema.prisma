@@ -54,6 +54,7 @@ model Match {
   finishedAt DateTime?
   players    MatchPlayer[]
   events     MatchEvent[]
+  calls      ModelCall[]
 }
 
 /// One seat in a match, linking a model to its role and outcome.
@@ -88,6 +89,30 @@ model MatchEvent {
   phase        String
   data         Json?
   visibleTo    String[] // seat ids; empty = public
+
+  @@index([matchId, idx])
+}
+
+/// The full log of one model call: exactly what the model saw and returned.
+/// This is the debug/inspection record behind every decision.
+model ModelCall {
+  id           String   @id @default(cuid())
+  match        Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  matchId      String
+  idx          Int // order within the match
+  seatId       String
+  seatName     String
+  decisionType String
+  day          Int
+  phase        String
+  systemPrompt String // the rules/system message
+  userPrompt   String // exactly what the model saw (redacted state + task)
+  rawResponse  String // exactly what the model returned
+  parsed       Json? // the action we parsed out
+  thoughts     String? // the model's stated thoughts
+  valid        Boolean // did it pass validation (false = forfeit)
+  latencyMs    Int?
+  createdAt    DateTime @default(now())
 
   @@index([matchId, idx])
 }

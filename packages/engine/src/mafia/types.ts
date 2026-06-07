@@ -98,6 +98,34 @@ export interface ActionResult {
   urgency?: number;
   /** The model's private "thoughts" — shown to spectators alongside its action. */
   thoughts?: string;
+  /** Raw I/O for full logging, set by LLM agents (not by scripted ones). */
+  diagnostics?: {
+    system: string;
+    user: string;
+    raw: string;
+    latencyMs: number;
+  };
+}
+
+/** A full record of one model call — emitted via the engine's `onModelCall` hook. */
+export interface ModelCall {
+  seatId: string;
+  seatName: string;
+  decisionType: DecisionType;
+  day: number;
+  phase: Phase;
+  /** The system/rules message. */
+  system: string;
+  /** Exactly what the model saw. */
+  user: string;
+  /** Exactly what the model returned. */
+  raw: string;
+  /** The action we parsed out. */
+  parsed: { target?: string; text?: string; urgency?: number };
+  thoughts?: string;
+  /** Whether the response passed validation (false => the seat forfeited). */
+  valid: boolean;
+  latencyMs: number;
 }
 
 export interface Agent {

@@ -1,6 +1,6 @@
 import type { Move, MoveContext, Strategy } from "@ai-battle/engine";
-import { clientFromSpec } from "./clients.js";
-import type { ChatClient } from "./llm.js";
+import { clientFromSpec } from "./clients";
+import type { ChatClient } from "./llm";
 
 const RULES = `You are playing the Iterated Prisoner's Dilemma against one opponent over a
 fixed number of rounds. Each round you both choose simultaneously to COOPERATE (C)
