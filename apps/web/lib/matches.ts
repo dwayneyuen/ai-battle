@@ -47,9 +47,13 @@ interface LiveMatch {
   error?: string;
 }
 
-// Module-level store. The web app is a single persistent process (Render), so
-// this lives for the lifetime of the server — long enough to watch a game.
-const live = new Map<string, LiveMatch>();
+// Live, in-progress matches kept in memory for the lifetime of the server
+// process (Render runs one persistent instance). Backed by globalThis so every
+// route bundle shares ONE map — otherwise POST and GET each get their own copy
+// and a freshly-started match looks "not found".
+const _g = globalThis as unknown as { __aiBattleLive?: Map<string, LiveMatch> };
+const live = _g.__aiBattleLive ?? new Map<string, LiveMatch>();
+_g.__aiBattleLive = live;
 
 function specParts(spec: string): { provider: string; label: string } {
   const i = spec.indexOf(":");
