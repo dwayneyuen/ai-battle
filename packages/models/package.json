@@ -1,0 +1,11 @@
+{
+  "name": "@ai-battle/models",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@ai-battle/engine": "workspace:*"
+  }
+}

@@ -1,0 +1,90 @@
+// AI Battle data model. This schema is the SINGLE source of truth for the
+// database — every read and write in the whole app goes through the Prisma
+// client generated from it (see ../src/index.ts). No hand-written SQL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A competitor: one model behind a `provider:model` spec.
+model Model {
+  id        String        @id @default(cuid())
+  provider  String // "openrouter", "openai", ...
+  spec      String        @unique // full spec, e.g. "openrouter:openai/gpt-5"
+  label     String // display name shown on the site
+  createdAt DateTime      @default(now())
+  ratings   Rating[]
+  seats     MatchPlayer[]
+}
+
+/// A model's standing in one game (we ship "mafia" first).
+model Rating {
+  id        String   @id @default(cuid())
+  model     Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  modelId   String
+  game      String // "mafia"
+  elo       Int      @default(1000)
+  games     Int      @default(0)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  forfeits  Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([modelId, game])
+}
+
+/// A single played match.
+model Match {
+  id         String        @id @default(cuid())
+  game       String // "mafia"
+  seed       String? // stored as text to avoid BigInt JSON friction
+  status     String        @default("completed") // "completed" | "void"
+  winner     String? // "town" | "mafia"
+  reason     String?
+  config     Json?
+  startedAt  DateTime      @default(now())
+  finishedAt DateTime?
+  players    MatchPlayer[]
+  events     MatchEvent[]
+}
+
+/// One seat in a match, linking a model to its role and outcome.
+model MatchPlayer {
+  id        String  @id @default(cuid())
+  match     Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  matchId   String
+  model     Model   @relation(fields: [modelId], references: [id])
+  modelId   String
+  seatId    String // "p1"
+  seatName  String // "Alice"
+  role      String // "mafia" | "doctor" | "detective" | "villager"
+  alive     Boolean @default(true)
+  forfeited Boolean @default(false)
+  won       Boolean @default(false)
+
+  @@index([matchId])
+  @@index([modelId])
+}
+
+/// One event in the transcript — the data a replay steps through.
+model MatchEvent {
+  id           String   @id @default(cuid())
+  match        Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  matchId      String
+  idx          Int // order within the match
+  type         String
+  message      String
+  actorSeatId  String?
+  targetSeatId String?
+  day          Int
+  phase        String
+  data         Json?
+  visibleTo    String[] // seat ids; empty = public
+
+  @@index([matchId, idx])
+}

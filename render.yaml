@@ -1,0 +1,29 @@
+# Render blueprint for AI Battle — a persistent, always-on backend.
+#
+# Runs the Next.js app as one long-running Node process. Because it's a real
+# process (not serverless), an API route can kick off a Mafia game and run it
+# in the background, writing each event to Neon Postgres as it plays — so you
+# can start a game and track its progress. Data lives in Neon (see DATABASE_URL).
+#
+# Deploy: Render dashboard > New + > Blueprint, pick this repo. Then set the
+# two secrets below in the dashboard. Railway alternative: docs/HOSTING.md.
+
+services:
+  - type: web
+    name: ai-battle-web
+    runtime: node
+    # Free web services sleep after ~15 min idle (cold start on next request).
+    # Use `starter` for a genuinely always-on, never-sleeping process.
+    plan: free
+    autoDeploy: true
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @ai-battle/db generate && pnpm --filter web build
+    # Sync the Prisma schema to Neon on each deploy (turnkey — no local step).
+    preDeployCommand: pnpm --filter @ai-battle/db db:push
+    startCommand: pnpm --filter web start
+    envVars:
+      # Neon Postgres connection string. Set in the dashboard (never in git).
+      - key: DATABASE_URL
+        sync: false
+      # One key reaches the whole model roster.
+      - key: OPENROUTER_API_KEY
+        sync: false
