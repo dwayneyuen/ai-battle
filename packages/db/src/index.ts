@@ -209,6 +209,7 @@ export function getMatch(id: string) {
     include: {
       players: { include: { model: true } },
       events: { orderBy: { idx: "asc" } },
+      calls: { orderBy: { idx: "asc" } },
     },
   });
 }

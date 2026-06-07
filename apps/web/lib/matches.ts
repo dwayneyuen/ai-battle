@@ -171,7 +171,7 @@ async function persist(match: LiveMatch): Promise<void> {
 }
 
 /** A JSON-safe view of a live match for the API. */
-export function snapshot(m: LiveMatch) {
+export function snapshot(m: LiveMatch, includeCalls = false) {
   return {
     id: m.id,
     status: m.status,
@@ -195,6 +195,22 @@ export function snapshot(m: LiveMatch) {
     })),
     forfeits:
       m.result?.forfeits.map((f) => ({ name: f.name, reason: f.reason })) ?? [],
+    // The system prompt is identical for every call, so send it once.
+    rules: includeCalls ? (m.modelCalls[0]?.system ?? null) : undefined,
+    calls: includeCalls
+      ? m.modelCalls.map((c) => ({
+          idx: c.idx,
+          seatName: c.seatName,
+          decisionType: c.decisionType,
+          day: c.day,
+          phase: c.phase,
+          prompt: c.user, // exactly what the model saw
+          response: c.raw, // exactly what it returned
+          thoughts: c.thoughts ?? null,
+          valid: c.valid,
+          latencyMs: c.latencyMs,
+        }))
+      : undefined,
   };
 }
 

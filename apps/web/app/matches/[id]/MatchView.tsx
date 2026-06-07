@@ -10,6 +10,18 @@ interface Ev {
   phase: string;
   private: boolean;
 }
+interface Call {
+  idx: number;
+  seatName: string;
+  decisionType: string;
+  day: number;
+  phase: string;
+  prompt: string;
+  response: string;
+  thoughts: string | null;
+  valid: boolean;
+  latencyMs: number | null;
+}
 interface Snap {
   id: string;
   status: "running" | "completed" | "void";
@@ -20,19 +32,25 @@ interface Snap {
   players: { seatId: string; seatName: string; label: string }[];
   events: Ev[];
   forfeits: { name: string; reason: string }[];
+  rules?: string | null;
+  calls?: Call[];
 }
 
 export function MatchView({ id }: { id: string }) {
   const [snap, setSnap] = useState<Snap | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [showPrivate, setShowPrivate] = useState(true);
+  const [showPrompts, setShowPrompts] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
+  // Re-runs when showPrompts toggles so it refetches with/without ?calls=1
+  // (even for a finished game, where the poll loop has already stopped).
   useEffect(() => {
     let stop = false;
+    const url = `/api/matches/${id}${showPrompts ? "?calls=1" : ""}`;
     async function poll() {
       try {
-        const r = await fetch(`/api/matches/${id}`, { cache: "no-store" });
+        const r = await fetch(url, { cache: "no-store" });
         if (r.status === 404) {
           if (!stop) setNotFound(true);
           return;
@@ -40,7 +58,7 @@ export function MatchView({ id }: { id: string }) {
         if (r.ok) {
           const d = (await r.json()) as Snap;
           if (!stop) setSnap(d);
-          if (d.status !== "running") return; // stop polling once finished
+          if (d.status !== "running") return; // stop once finished
         }
       } catch {
         // transient — keep polling
@@ -51,9 +69,8 @@ export function MatchView({ id }: { id: string }) {
     return () => {
       stop = true;
     };
-  }, [id]);
+  }, [id, showPrompts]);
 
-  // Keep the latest line in view as the game streams in.
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [snap?.events.length]);
@@ -85,14 +102,24 @@ export function MatchView({ id }: { id: string }) {
         <p className="players">
           {snap.players.map((p) => `${p.seatName} = ${p.label}`).join("  ·  ")}
         </p>
-        <label className="toggle">
-          <input
-            type="checkbox"
-            checked={showPrivate}
-            onChange={(e) => setShowPrivate(e.target.checked)}
-          />{" "}
-          show private (night actions &amp; thoughts)
-        </label>
+        <div className="toggles">
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={showPrivate}
+              onChange={(e) => setShowPrivate(e.target.checked)}
+            />{" "}
+            show private (night actions &amp; thoughts)
+          </label>
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={showPrompts}
+              onChange={(e) => setShowPrompts(e.target.checked)}
+            />{" "}
+            show model prompts
+          </label>
+        </div>
       </section>
 
       <div className="transcript">
@@ -109,6 +136,48 @@ export function MatchView({ id }: { id: string }) {
         ) : null}
         <div ref={endRef} />
       </div>
+
+      {showPrompts ? (
+        <div className="logs">
+          <h2 className="section-title">
+            Model prompts{snap.calls ? ` (${snap.calls.length} calls)` : ""}
+          </h2>
+          {snap.calls && snap.calls.length === 0 ? (
+            <p className="legend">
+              No model calls yet
+              {snap.mock ? " (mock games make no model calls)" : ""}.
+            </p>
+          ) : null}
+          {snap.rules ? (
+            <details className="call">
+              <summary>System rules (sent with every call)</summary>
+              <pre className="prompt">{snap.rules}</pre>
+            </details>
+          ) : null}
+          {(snap.calls ?? []).map((c) => (
+            <details key={c.idx} className="call">
+              <summary>
+                D{c.day} · {c.phase} · <strong>{c.seatName}</strong> ·{" "}
+                {c.decisionType}
+                {c.valid ? "" : " · forfeit"}
+                {c.latencyMs != null ? ` · ${c.latencyMs}ms` : ""}
+              </summary>
+              <div className="call-body">
+                <div className="call-label">Prompt the model saw</div>
+                <pre className="prompt">{c.prompt}</pre>
+                <div className="call-label">Raw response</div>
+                <pre className="response">{c.response}</pre>
+                {c.thoughts ? (
+                  <>
+                    <div className="call-label">Thoughts</div>
+                    <p className="thoughts-text">{c.thoughts}</p>
+                  </>
+                ) : null}
+              </div>
+            </details>
+          ))}
+        </div>
+      ) : null}
     </>
   );
 }
