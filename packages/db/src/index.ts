@@ -370,6 +370,26 @@ export function listMatches(game = "mafia", take = 50) {
   });
 }
 
+/** One page of match history, newest first. `game` omitted = all games. */
+export function listMatchesPage(opts: {
+  game?: string;
+  skip?: number;
+  take?: number;
+}) {
+  const { game, skip = 0, take = 25 } = opts;
+  return prisma.match.findMany({
+    where: game ? { game } : {},
+    orderBy: { finishedAt: "desc" },
+    skip,
+    take,
+    include: { players: { include: { model: true } } },
+  });
+}
+
+export function countMatches(game?: string) {
+  return prisma.match.count({ where: game ? { game } : {} });
+}
+
 export function getMatch(id: string) {
   return prisma.match.findUnique({
     where: { id },
