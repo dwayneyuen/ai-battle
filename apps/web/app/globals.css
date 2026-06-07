@@ -167,6 +167,11 @@ a {
 .card.planned {
   opacity: 0.82;
 }
+.card-play {
+  display: inline-block;
+  margin-top: 14px;
+  text-decoration: none;
+}
 .card-head {
   display: flex;
   align-items: center;

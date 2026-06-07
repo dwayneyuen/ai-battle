@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   GAMES,
   GAME_FEATURE_LABELS,
@@ -45,6 +46,11 @@ function GameCard({ g }: { g: GameInfo }) {
             ))}
           </ul>
         </details>
+      )}
+      {g.status === "playable" && (
+        <Link className="btn primary card-play" href="/play">
+          Play ▸
+        </Link>
       )}
     </article>
   );
