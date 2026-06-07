@@ -185,6 +185,172 @@ export async function recordMatch(input: RecordMatchInput): Promise<string> {
   });
 }
 
+// --- Prisoner's Dilemma season ---------------------------------------------
+
+export interface PdSeasonPlayerInput {
+  spec: string;
+  label: string;
+  provider: string;
+}
+
+export interface PdRoundInput {
+  idx: number;
+  moveA: "C" | "D";
+  moveB: "C" | "D";
+  scoreA: number;
+  scoreB: number;
+  thoughtsA?: string;
+  thoughtsB?: string;
+}
+
+/** A finished match, with both seats keyed by their model spec. */
+export interface PdMatchInput {
+  aSpec: string;
+  bSpec: string;
+  seed?: string;
+  scoreA: number;
+  scoreB: number;
+  rounds: PdRoundInput[];
+  /** Post-match reflections (level "match"), one per seat that produced one. */
+  reflections: { spec: string; thoughts: string }[];
+}
+
+/** One round robin plus the strategy revisions that followed it. */
+export interface PdGenerationInput {
+  idx: number;
+  matches: PdMatchInput[];
+  /** Between-generation revisions (level "generation"), one per model. */
+  generationReflections: {
+    spec: string;
+    strategy: string;
+    notebook: string;
+    thoughts: string;
+  }[];
+  /** Running standings snapshot after this generation. */
+  standings: { spec: string; label: string; total: number }[];
+}
+
+export interface RecordPdSeasonInput {
+  config?: unknown;
+  players: PdSeasonPlayerInput[];
+  /** Opening strategy declarations (level "initial"), one per model. */
+  initialDeclarations: { spec: string; strategy: string; thoughts: string }[];
+  generations: PdGenerationInput[];
+}
+
+/**
+ * Persist a finished Prisoner's Dilemma season: upserts the competing models,
+ * then writes the season, every generation, match, round (with per-round
+ * thoughts), and all three levels of reflection — in one transaction. Returns
+ * the new season id.
+ */
+export async function recordPdSeason(
+  input: RecordPdSeasonInput,
+): Promise<string> {
+  return prisma.$transaction(
+    async (tx) => {
+      const idBySpec = new Map<string, string>();
+      for (const p of input.players) {
+        const model = await tx.model.upsert({
+          where: { spec: p.spec },
+          update: { label: p.label },
+          create: { spec: p.spec, label: p.label, provider: p.provider },
+        });
+        idBySpec.set(p.spec, model.id);
+      }
+      const modelId = (spec: string): string => {
+        const id = idBySpec.get(spec);
+        if (!id) throw new Error(`Unknown model spec in season: ${spec}`);
+        return id;
+      };
+
+      const season = await tx.pdSeason.create({
+        data: {
+          config: (input.config ?? undefined) as never,
+          status: "completed",
+          finishedAt: new Date(),
+        },
+      });
+
+      for (const d of input.initialDeclarations) {
+        await tx.pdReflection.create({
+          data: {
+            modelId: modelId(d.spec),
+            level: "initial",
+            seasonId: season.id,
+            strategy: d.strategy,
+            thoughts: d.thoughts,
+          },
+        });
+      }
+
+      for (const gen of input.generations) {
+        const generation = await tx.pdGeneration.create({
+          data: {
+            seasonId: season.id,
+            idx: gen.idx,
+            standings: gen.standings as never,
+          },
+        });
+
+        for (const m of gen.matches) {
+          const match = await tx.pdMatch.create({
+            data: {
+              seasonId: season.id,
+              generationId: generation.id,
+              aModelId: modelId(m.aSpec),
+              bModelId: modelId(m.bSpec),
+              seed: m.seed,
+              scoreA: m.scoreA,
+              scoreB: m.scoreB,
+              rounds: {
+                create: m.rounds.map((r) => ({
+                  idx: r.idx,
+                  moveA: r.moveA,
+                  moveB: r.moveB,
+                  scoreA: r.scoreA,
+                  scoreB: r.scoreB,
+                  thoughtsA: r.thoughtsA,
+                  thoughtsB: r.thoughtsB,
+                })),
+              },
+            },
+          });
+          for (const r of m.reflections) {
+            await tx.pdReflection.create({
+              data: {
+                modelId: modelId(r.spec),
+                level: "match",
+                seasonId: season.id,
+                generationId: generation.id,
+                matchId: match.id,
+                thoughts: r.thoughts,
+              },
+            });
+          }
+        }
+
+        for (const gr of gen.generationReflections) {
+          await tx.pdReflection.create({
+            data: {
+              modelId: modelId(gr.spec),
+              level: "generation",
+              seasonId: season.id,
+              generationId: generation.id,
+              strategy: gr.strategy,
+              notebook: gr.notebook,
+              thoughts: gr.thoughts,
+            },
+          });
+        }
+      }
+
+      return season.id;
+    },
+    { timeout: 120_000, maxWait: 10_000 },
+  );
+}
+
 // --- Reads (used by the web app) -------------------------------------------
 
 export function getLeaderboard(game = "mafia") {
@@ -211,6 +377,39 @@ export function getMatch(id: string) {
       players: { include: { model: true } },
       events: { orderBy: { idx: "asc" } },
       calls: { orderBy: { idx: "asc" } },
+    },
+  });
+}
+
+export function listPdSeasons(take = 50) {
+  return prisma.pdSeason.findMany({
+    orderBy: { finishedAt: "desc" },
+    take,
+    include: { generations: { orderBy: { idx: "asc" } } },
+  });
+}
+
+/** A full season for replay: generations → matches → rounds, plus every reflection. */
+export function getPdSeason(id: string) {
+  return prisma.pdSeason.findUnique({
+    where: { id },
+    include: {
+      generations: {
+        orderBy: { idx: "asc" },
+        include: {
+          matches: {
+            include: {
+              aModel: true,
+              bModel: true,
+              rounds: { orderBy: { idx: "asc" } },
+            },
+          },
+        },
+      },
+      reflections: {
+        orderBy: { createdAt: "asc" },
+        include: { model: true },
+      },
     },
   });
 }

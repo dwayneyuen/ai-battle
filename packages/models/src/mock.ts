@@ -1,4 +1,5 @@
 import { mulberry32, pick, type Agent } from "@ai-battle/engine";
+import type { ChatClient } from "./llm";
 
 const FLAVOR = [
   "I'm not sure yet, but {p} has been awfully quiet.",
@@ -37,6 +38,51 @@ export function mockAgent(
           ? pick(ctx.decision.options, rand)
           : undefined;
       return { target, thoughts: "(mock) picking at random" };
+    },
+  };
+}
+
+/**
+ * A zero-cost {@link ChatClient} for the Prisoner's Dilemma season. It returns
+ * well-formed JSON for whichever prompt shape it's handed (a move, an initial
+ * declaration, a per-match reflection, or a between-generation revision), so the
+ * whole season pipeline — including the three levels of captured reasoning —
+ * runs with no API keys. Moves are coin-flips; the text is canned placeholder.
+ */
+export function mockChatClient(
+  label: string,
+  seed = (Math.random() * 2 ** 32) >>> 0,
+): ChatClient {
+  const rand = mulberry32(seed);
+  return {
+    label,
+    async complete(_system, user) {
+      const move = rand() < 0.5 ? "C" : "D";
+      // Between-generation revision asks for both a strategy and a notebook.
+      if (/"notebook"/.test(user)) {
+        return JSON.stringify({
+          strategy: "(mock) keep cooperating, but punish repeat defectors.",
+          notebook: "(mock) some opponents defect early; watch the last round.",
+          thoughts: "(mock) adjusting after reviewing my round-robin results.",
+        });
+      }
+      if (/"move"/.test(user)) {
+        return JSON.stringify({
+          move,
+          thoughts: "(mock) coin-flip this round.",
+        });
+      }
+      // Initial declaration asks for a strategy (but no notebook).
+      if (/"strategy"/.test(user)) {
+        return JSON.stringify({
+          strategy: "(mock) open by cooperating, then mirror the opponent.",
+          thoughts: "(mock) a nice, retaliatory opening plan.",
+        });
+      }
+      // Otherwise a per-match reflection: thoughts only.
+      return JSON.stringify({
+        thoughts: "(mock) that match went about as I expected.",
+      });
     },
   };
 }

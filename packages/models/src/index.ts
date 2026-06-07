@@ -3,7 +3,7 @@ import { clientFromSpec } from "./clients";
 import { llmAgent } from "./llm";
 import { mockAgent } from "./mock";
 
-export { mockAgent } from "./mock";
+export { mockAgent, mockChatClient } from "./mock";
 export { llmAgent, type ChatClient } from "./llm";
 export { clientFromSpec } from "./clients";
 export { pdStrategy, pdStrategyFromSpec } from "./pd";
@@ -12,6 +12,13 @@ export {
   mockRollOffAgent,
   rollOffAgentFromSpec,
 } from "./rolloff";
+export {
+  SeasonAgent,
+  type DeclareResult,
+  type GenerationReflection,
+  type OwnMatchLog,
+  type StandingLine,
+} from "./pd-season";
 export {
   openaiClient,
   anthropicClient,
