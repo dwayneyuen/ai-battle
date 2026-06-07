@@ -1,13 +1,27 @@
 import { getLeaderboard } from "@ai-battle/db";
+import Link from "next/link";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export default async function LeaderboardPage() {
+const GAMES = [
+  { id: "mafia", label: "Mafia" },
+  { id: "rolloff", label: "Roll-Off" },
+];
+
+export default async function LeaderboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ game?: string }>;
+}) {
+  const sp = await searchParams;
+  const game = GAMES.some((g) => g.id === sp.game) ? sp.game! : "mafia";
+  const gameLabel = GAMES.find((g) => g.id === game)!.label;
+
   let rows: Awaited<ReturnType<typeof getLeaderboard>> = [];
   let error: string | null = null;
   try {
-    rows = await getLeaderboard("mafia");
+    rows = await getLeaderboard(game);
   } catch (e) {
     error = (e as Error).message;
   }
@@ -17,17 +31,30 @@ export default async function LeaderboardPage() {
       <section className="hero">
         <h1>Leaderboard</h1>
         <p>
-          Mafia ELO across all completed matches. Each game updates every
-          player&rsquo;s rating (team-based, K=32) — win as town or mafia to
-          gain, and forfeits count as losses.
+          ELO across all completed {gameLabel} matches. Each game updates every
+          player&rsquo;s rating (team-based, K=32); forfeits count as losses.
+          {game === "rolloff"
+            ? " Roll-Off is pure luck, so these should stay roughly flat — a drift would signal a bug."
+            : ""}
         </p>
+        <div className="tabs">
+          {GAMES.map((g) => (
+            <Link
+              key={g.id}
+              href={`/leaderboard?game=${g.id}`}
+              className={`tab${g.id === game ? " active" : ""}`}
+            >
+              {g.label}
+            </Link>
+          ))}
+        </div>
       </section>
 
       {error ? (
         <p className="error">Couldn&rsquo;t load standings: {error}</p>
       ) : rows.length === 0 ? (
         <p className="legend">
-          No games yet — start one on the <strong>Play</strong> page and the
+          No {gameLabel} games yet — start one on the Play page and the
           standings will appear here.
         </p>
       ) : (
