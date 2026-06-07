@@ -8,4 +8,7 @@ export * from "./prisoners-dilemma/types";
 export { runMatch, runTournament } from "./prisoners-dilemma/engine";
 export * from "./prisoners-dilemma/strategies";
 
+export * from "./rolloff/types";
+export { runRollOff } from "./rolloff/engine";
+
 export { mulberry32, shuffle, pick } from "./rng";

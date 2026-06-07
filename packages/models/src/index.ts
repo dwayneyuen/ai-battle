@@ -8,6 +8,11 @@ export { llmAgent, type ChatClient } from "./llm";
 export { clientFromSpec } from "./clients";
 export { pdStrategy, pdStrategyFromSpec } from "./pd";
 export {
+  rollOffAgent,
+  mockRollOffAgent,
+  rollOffAgentFromSpec,
+} from "./rolloff";
+export {
   SeasonAgent,
   type DeclareResult,
   type GenerationReflection,

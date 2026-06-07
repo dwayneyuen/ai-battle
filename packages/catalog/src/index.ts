@@ -52,6 +52,25 @@ export const GAME_FEATURE_LABELS: { key: keyof GameFeatures; label: string }[] =
 
 export const GAMES: GameInfo[] = [
   {
+    id: "rolloff",
+    name: "Roll-Off",
+    status: "playable",
+    players: { min: 2, max: 8 },
+    blurb:
+      "A pure-luck dice race used as a smoke test. Each round every player predicts a die roll, but the dealer rolls a fair die — so the prediction never matters and every player wins exactly 1/N. Any deviation over a large sample flags a bug in the harness, not model skill.",
+    features: {
+      hiddenInfo: false,
+      simultaneousMoves: true,
+      negotiation: false,
+      randomness: true,
+      teamBased: false,
+      elimination: false,
+    },
+    notSupported: [
+      "Decisions that affect the outcome (intentional — it's a skill-independent control)",
+    ],
+  },
+  {
     id: "prisoners-dilemma",
     name: "Prisoner's Dilemma",
     status: "playable",

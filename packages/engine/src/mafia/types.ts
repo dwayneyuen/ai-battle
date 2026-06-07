@@ -22,27 +22,17 @@ export interface PlayerView {
   alive: boolean;
 }
 
-/** Something that happened in the game. Drives logs, the UI, and agent memory. */
+/**
+ * Something that happened in a game. Drives logs, the UI, and agent memory.
+ * `type` is a free-form string so other games can emit their own event kinds
+ * (Mafia uses: game-start, role-assigned, night-falls, mafia-chat, mafia-target,
+ * investigation, death, no-death, day-breaks, bid, statement, vote, elimination,
+ * forfeit, thought, result).
+ */
 export interface GameEvent {
-  type:
-    | "game-start"
-    | "role-assigned"
-    | "night-falls"
-    | "mafia-chat"
-    | "mafia-target"
-    | "investigation"
-    | "death"
-    | "no-death"
-    | "day-breaks"
-    | "bid"
-    | "statement"
-    | "vote"
-    | "elimination"
-    | "forfeit"
-    | "thought"
-    | "result";
+  type: string;
   day: number;
-  phase: Phase;
+  phase: string;
   /** Human-readable, spectator-friendly description. */
   message: string;
   actor?: string; // player id who acted
@@ -111,9 +101,9 @@ export interface ActionResult {
 export interface ModelCall {
   seatId: string;
   seatName: string;
-  decisionType: DecisionType;
+  decisionType: string;
   day: number;
-  phase: Phase;
+  phase: string;
   /** The system/rules message. */
   system: string;
   /** Exactly what the model saw. */
@@ -121,7 +111,7 @@ export interface ModelCall {
   /** Exactly what the model returned. */
   raw: string;
   /** The action we parsed out. */
-  parsed: { target?: string; text?: string; urgency?: number };
+  parsed: Record<string, unknown>;
   thoughts?: string;
   /** Whether the response passed validation (false => the seat forfeited). */
   valid: boolean;

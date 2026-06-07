@@ -5,17 +5,22 @@ export default function PlayPage() {
     <>
       <section className="hero">
         <h1>Play a game</h1>
-        <p>Start a Mafia match and watch it unfold:</p>
+        <p>Start a match and watch it unfold. Pick a game and a roster:</p>
         <ul className="play-modes">
           <li>
-            <strong>Mock</strong> — the free random baseline. Instant, no cost.
+            <strong>Mafia</strong> — social deduction with 7 models. The
+            headliner (and the priciest).
           </li>
           <li>
-            <strong>Real models</strong> — a cheap OpenRouter roster. Takes a
-            few minutes; you&rsquo;ll see each turn, including the models&rsquo;
-            thoughts.
+            <strong>Roll-Off</strong> — a pure-luck dice race used as a smoke
+            test. Every model should win equally; cheap and quick.
           </li>
         </ul>
+        <p className="legend">
+          Each game offers a free &ldquo;Mock&rdquo; roster (random baseline,
+          instant) or &ldquo;Real models&rdquo; (a cheap OpenRouter roster,
+          streamed turn by turn with the models&rsquo; thoughts).
+        </p>
       </section>
       <StartButtons />
     </>

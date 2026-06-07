@@ -58,7 +58,8 @@ export interface RecordMatchInput {
   game: string;
   seed?: string;
   status: "completed" | "void";
-  winner?: "town" | "mafia";
+  /** Winner label — game-specific (e.g. "town"/"mafia", or a winning seat name). */
+  winner?: string;
   reason?: string;
   config?: unknown;
   players: MatchPlayerInput[];
