@@ -319,6 +319,18 @@ table.providers tr:last-child td {
   background: var(--surface-2);
 }
 
+/* Play */
+.play-modes {
+  margin: 12px 0 20px;
+  padding-left: 18px;
+  color: var(--text-soft);
+  font-size: 0.95rem;
+  max-width: 62ch;
+}
+.play-modes li {
+  margin: 4px 0;
+}
+
 /* Play / start buttons */
 .start-buttons {
   display: flex;

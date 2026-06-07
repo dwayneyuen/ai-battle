@@ -10,19 +10,19 @@ import {
 import { agentFromSpec } from "@ai-battle/models";
 import { recordMatch, type ModelCallInput } from "@ai-battle/db";
 
-// In-game seat names.
-const NAMES = ["Alice", "Bob", "Carol", "Dave", "Erin", "Frank", "Grace"];
-
-// A cheap default roster via OpenRouter (one key reaches all of these).
-// NOTE: exact slugs occasionally change — adjust against openrouter.ai/models.
-const DEFAULT_ROSTER = [
-  "openrouter:openai/gpt-5-mini",
-  "openrouter:google/gemini-2.5-flash",
-  "openrouter:anthropic/claude-3.5-haiku",
-  "openrouter:meta-llama/llama-3.3-70b-instruct",
-  "openrouter:deepseek/deepseek-chat",
-  "openrouter:qwen/qwen-2.5-72b-instruct",
-  "openrouter:mistralai/mistral-small",
+// Each seat is named after the model it runs — a pun that decodes to the model,
+// so it's obvious who's who. Slugs verified against the live OpenRouter catalog.
+const ROSTER = [
+  { name: "Gepetto", spec: "openrouter:openai/gpt-5-mini" }, // G-e-P-e-T-to
+  { name: "Jiminy", spec: "openrouter:google/gemini-2.5-flash" }, // ~ Gemini
+  { name: "Claude", spec: "openrouter:anthropic/claude-haiku-4.5" }, // literally
+  { name: "Lamar", spec: "openrouter:meta-llama/llama-3.3-70b-instruct" }, // Llama
+  { name: "Deepak", spec: "openrouter:deepseek/deepseek-chat-v3.1" }, // DeepSeek
+  { name: "Quinn", spec: "openrouter:qwen/qwen3.6-flash" }, // ~ Qwen
+  {
+    name: "Misty",
+    spec: "openrouter:mistralai/mistral-small-3.2-24b-instruct",
+  }, // Mistral
 ];
 
 interface Seat {
@@ -57,23 +57,17 @@ function specParts(spec: string): { provider: string; label: string } {
 }
 
 /** Kick off a Mafia game in the background and return its id immediately. */
-export function startMatch(opts: {
-  mock?: boolean;
-  models?: string[];
-}): string {
+export function startMatch(opts: { mock?: boolean }): string {
   const id = randomUUID();
-  const roster =
-    opts.models && opts.models.length ? opts.models : DEFAULT_ROSTER;
-  const seats: Seat[] = roster.slice(0, NAMES.length).map((spec, i) => ({
-    seatId: `p${i + 1}`,
-    seatName: NAMES[i],
-    spec,
-    ...specParts(spec),
-  }));
+  const mock = opts.mock ?? false;
+  const seats: Seat[] = ROSTER.map((r, i) => {
+    const spec = mock ? "mock" : r.spec;
+    return { seatId: `p${i + 1}`, seatName: r.name, spec, ...specParts(spec) };
+  });
   const match: LiveMatch = {
     id,
     status: "running",
-    mock: opts.mock ?? false,
+    mock,
     createdAt: Date.now(),
     seats,
     events: [],
@@ -87,7 +81,7 @@ export function startMatch(opts: {
 async function play(match: LiveMatch): Promise<void> {
   const agents: Record<string, ReturnType<typeof agentFromSpec>> = {};
   for (const s of match.seats) {
-    agents[s.seatId] = agentFromSpec(match.mock ? "mock" : s.spec, s.seatName);
+    agents[s.seatId] = agentFromSpec(s.spec, s.seatName);
   }
   const config: MafiaConfig = {
     players: match.seats.map((s) => ({ id: s.seatId, name: s.seatName })),
@@ -103,7 +97,8 @@ async function play(match: LiveMatch): Promise<void> {
     );
     match.result = result;
     match.status = "completed";
-    await persist(match);
+    // Mock games are ephemeral pipeline tests — don't persist or rate them.
+    if (!match.mock) await persist(match);
   } catch (err) {
     match.status = "void";
     match.error =
