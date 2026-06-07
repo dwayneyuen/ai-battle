@@ -364,14 +364,67 @@ table.providers tr:last-child td {
   color: var(--amber);
   font-size: 0.9rem;
 }
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 12px;
+}
 .toggle {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-top: 12px;
   color: var(--muted);
   font-size: 0.85rem;
   cursor: pointer;
+}
+
+/* Model prompt logs */
+.logs {
+  margin-top: 24px;
+}
+.call {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  margin-bottom: 8px;
+  padding: 4px 12px;
+}
+.call summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  padding: 6px 0;
+}
+.call-body {
+  padding: 4px 0 10px;
+}
+.call-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 10px 0 4px;
+}
+.call pre.prompt,
+.call pre.response {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.thoughts-text {
+  margin: 0;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-soft);
 }
 
 /* Match transcript */
