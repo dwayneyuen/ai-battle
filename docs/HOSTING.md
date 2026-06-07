@@ -1,74 +1,55 @@
 # Hosting
 
-AI Battle runs as an **always-on backend** with a **durable Postgres** database —
-not a serverless/ephemeral setup. The persistent layer is the database; the Node
-process stays running to serve the site/API and (later) to run scheduled matches.
+AI Battle runs on a **persistent, always-on backend** with a durable **Neon
+Postgres**. The backend is one long-running Node process (the Next.js app), so
+an API route can kick off a Mafia game and run it **in the background** —
+writing each event to Postgres as it plays — which lets you start a game and
+watch its progress. No serverless functions, no cron.
 
 ## Architecture
 
 ```
-                ┌──────────────────────────────────────┐
-                │  Render / Railway (one persistent host) │
-                │                                        │
-  visitors ───▶ │  Web service (Node, always-on)         │
-                │   • Next.js site  (apps/web)           │
-                │   • API routes    (reads from DB)      │
-                │                                        │
-   schedule ──▶ │  Match runner (cron / worker)  ──────┐ │
-                │                                      │ │
-                │            ┌─────────────────────────▼─┐
-                │            │  Postgres (managed, durable)│  ◀── the persistent layer
-                │            │  matches · transcripts ·    │
-                │            │  results · ratings          │
-                │            └─────────────────────────────┘
-                └──────────────────────────────────────┘
+  browser ──▶  Next.js app on Render (one always-on process)
+                 • UI + API
+                 • starts a game → runs it in the background
+                 • writes events + full model logs as they happen
+                         │
+                         ▼
+                 Neon Postgres  ◀── the only durable layer
+                 matches · transcripts · model logs · ratings
 ```
 
-- **Web service** — a long-running `next start` process. Serves the catalog
-  today; will serve the leaderboard, recent matches, and replays once the data
-  layer lands. Because it's a real process (not serverless), it can also host a
-  live/in-memory game view later if we want one.
-- **Database** — managed Postgres. This is the durable store; everything worth
-  keeping lives here.
-- **Match runner** — a separate scheduled job (Render Cron Job / Railway cron)
-  that plays a tournament round and writes results to Postgres, then exits. Not
-  built yet.
+- **Backend** — the Next.js app via `next start` on Render. A real process, so it
+  can run a minutes-long game in the background and track progress.
+- **Database** — Neon Postgres. Accessed only through `@ai-battle/db` (Prisma);
+  no raw SQL, no second access path.
+- **Full logs** — every model call is stored (the prompt the model saw, its raw
+  response, the parsed action, and its reasoning) for inspection and debugging.
 
-## Deploying to Render (blueprint)
+## Secrets
 
-The repo ships a [`render.yaml`](../render.yaml) blueprint that provisions the
-web service **and** the Postgres database together.
+Set both in the Render dashboard (the `render.yaml` declares them as `sync: false`,
+so they never live in git):
 
-1. Push to GitHub (done — this repo).
-2. In Render: **New + → Blueprint**, pick this repo. Render reads `render.yaml`.
-3. Render builds with `pnpm --filter web build` and starts with
-   `pnpm --filter web start`, injecting `DATABASE_URL` from the managed database.
-4. Add any model API keys (`OPENAI_API_KEY`, etc.) in the dashboard — they're
-   declared `sync: false` so they never live in git.
+| Secret               | What                                                                                                                                                  |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`       | Neon connection string — use the **direct** (non-pooled) string; a persistent server doesn't need PgBouncer, and `db push` needs a direct connection. |
+| `OPENROUTER_API_KEY` | One key reaches the whole model roster.                                                                                                               |
 
-**Always-on note:** Render's _free_ web plan sleeps after ~15 min idle (cold
-start on the next request) and the _free_ Postgres is removed after ~30 days.
-For a genuinely always-on backend, use the **Starter** web plan (~$7/mo) and a
-paid/Neon database.
+## Deploy to Render
 
-## Deploying to Railway (alternative)
+1. Create a **Neon** project; copy the **direct** connection string.
+2. In Render: **New + → Blueprint**, pick this repo (it reads `render.yaml`).
+3. Add `DATABASE_URL` and `OPENROUTER_API_KEY` as environment variables.
+4. Deploy. Render runs: install → `prisma generate` → `next build`, then a
+   pre-deploy `prisma db push` (syncs the schema to Neon), then `next start`.
 
-Railway has no blueprint file; configure in the dashboard:
+**Always-on note:** the free web plan sleeps after ~15 min idle (cold start on
+the next request). Use the **Starter** plan (~$7/mo) for a never-sleeping process.
 
-1. **New Project → Deploy from GitHub repo.**
-2. Add a **Postgres** plugin — it sets `DATABASE_URL` automatically.
-3. Service settings:
-   - Build: `corepack enable && pnpm install --frozen-lockfile && pnpm --filter web build`
-   - Start: `pnpm --filter web start`
-4. Add model API keys as service variables.
+## Why persistent (not serverless or cron)
 
-Railway bills by usage (a small monthly credit on the hobby plan) and does not
-sleep, which makes it a good fit for an always-on process.
-
-## Why not Vercel?
-
-Vercel is serverless — ephemeral functions with no long-running process — so it
-can't be the always-on backend, and it isn't the persistent layer either
-(persistence always lives in the database). It would only fit a read-only,
-scheduled-matches design. We chose the always-on backend instead, so the whole
-app (site + API + match runner) lives on one persistent host.
+A match is a **minutes-long job you want to start on demand and watch**.
+Serverless functions cap out at a few minutes and can't hold a running game;
+a cron can't be triggered on demand or tracked live. A persistent process does
+both, and the durable layer is simply the database.

@@ -1,42 +1,29 @@
-# Render blueprint for AI Battle — an always-on backend + managed Postgres.
+# Render blueprint for AI Battle — a persistent, always-on backend.
 #
-# This declares the persistent backend we chose: one long-running Node web
-# service (the Next.js site today; the API + match runner later) wired to a
-# durable Postgres database. Deploy by pointing Render at this repo
-# ("New + > Blueprint") — Render reads this file and provisions everything.
+# Runs the Next.js app as one long-running Node process. Because it's a real
+# process (not serverless), an API route can kick off a Mafia game and run it
+# in the background, writing each event to Neon Postgres as it plays — so you
+# can start a game and track its progress. Data lives in Neon (see DATABASE_URL).
 #
-# Railway alternative: see docs/HOSTING.md (same shape, configured in the
-# dashboard rather than a blueprint file).
+# Deploy: Render dashboard > New + > Blueprint, pick this repo. Then set the
+# two secrets below in the dashboard. Railway alternative: docs/HOSTING.md.
 
 services:
   - type: web
     name: ai-battle-web
     runtime: node
-    # Free web services sleep after ~15 min idle (cold starts on next request).
-    # Switch to `starter` for a genuinely always-on, never-sleeping process.
+    # Free web services sleep after ~15 min idle (cold start on next request).
+    # Use `starter` for a genuinely always-on, never-sleeping process.
     plan: free
     autoDeploy: true
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter web build
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @ai-battle/db generate && pnpm --filter web build
+    # Sync the Prisma schema to Neon on each deploy (turnkey — no local step).
+    preDeployCommand: pnpm --filter @ai-battle/db db:push
     startCommand: pnpm --filter web start
     envVars:
-      # Durable connection string, injected from the managed database below.
+      # Neon Postgres connection string. Set in the dashboard (never in git).
       - key: DATABASE_URL
-        fromDatabase:
-          name: ai-battle-db
-          property: connectionString
-      # Model provider keys — set the ones you use in the Render dashboard.
-      # (sync: false keeps secrets out of this file / git.)
-      - key: OPENAI_API_KEY
         sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: GOOGLE_API_KEY
-        sync: false
+      # One key reaches the whole model roster.
       - key: OPENROUTER_API_KEY
         sync: false
-
-databases:
-  # The persistent layer. Note: the free Postgres plan is removed after ~30
-  # days — move to a paid plan (or Neon) before relying on it in production.
-  - name: ai-battle-db
-    plan: free

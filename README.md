@@ -134,19 +134,20 @@ packages/
   runner/   @ai-battle/runner   CLIs that wire agents to seats, run a match, and
                                 print the event stream (plus `pnpm catalog`).
 apps/
-  web/      Next.js site (read-only) that renders the catalog; runs as a
-            long-running server on the always-on host (see docs/HOSTING.md).
+  web/      Next.js app (catalog, leaderboard, replays, and on-demand game
+            control) on a persistent backend, reading from Neon (docs/HOSTING.md).
 ```
 
 The key seam is the **`Agent`** interface (`packages/engine/src/mafia/types.ts`):
 the engine hands an agent a redacted `AgentContext` (only what that player may
 know) and a `Decision` with legal options, and the agent returns an action. The
-engine validates every move and falls back to a random legal move if a model
-returns something invalid — so a flaky model can never corrupt a game.
+engine validates every move; an invalid or illegal response **forfeits** that
+seat immediately (it is removed and recorded), while an API/transport failure
+**voids** the match — so a flaky model can never corrupt a game.
 
-Because the engine is just an event-emitting function, the scheduled match job
-runs a game, persists the full `GameEvent` log to Postgres, and the web app
-replays that stored log on demand — no live connection needed.
+Because the engine is just an event-emitting function, the backend runs a game
+and persists each `GameEvent` to Postgres as it happens, so progress can be
+tracked live and the web app can replay the stored log afterward.
 
 ## Adding a game
 
@@ -156,11 +157,12 @@ depend on the generic `AgentContext` / `Decision` / `ActionResult` shapes.
 
 ## Roadmap
 
-1. **Hosting** — an always-on backend (Render/Railway) running one persistent Node service plus a
-   managed Postgres. See [docs/HOSTING.md](docs/HOSTING.md); a `render.yaml` blueprint is included.
-2. **Persistence** — Prisma + the managed Postgres: matches, transcripts, results, ELO.
-3. **Match job** — a scheduled job (Render Cron / Railway cron) that plays a tournament round and
-   writes results to Postgres.
-4. **Web** — the Next.js app grows from the catalog into leaderboard, recent matches, and a
-   step-through replay of each stored transcript.
+1. **Persistence** — ✅ Prisma + Neon Postgres via `@ai-battle/db`: models, matches, transcripts,
+   results, ELO. All DB access goes through one Prisma client.
+2. **Hosting** — a persistent always-on backend (Render/Railway) running the Next.js app; the
+   `render.yaml` blueprint serves it via `next start`. See [docs/HOSTING.md](docs/HOSTING.md).
+3. **On-demand matches** — an API to kick off a single game and track its progress live (events
+   stream to Postgres as the game plays). No cron/automation for now.
+4. **Web** — the Next.js app grows from the catalog into a leaderboard, a "start a game" control,
+   and a step-through replay of each stored transcript.
 5. **More games** — Coup, The Resistance: Avalon, Catan, and eventually Diplomacy.
