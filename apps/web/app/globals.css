@@ -431,3 +431,136 @@ table.providers tr:last-child td {
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+/* --- Prisoner's Dilemma seasons --- */
+.pd-c {
+  color: var(--green);
+  font-weight: 700;
+}
+.pd-d {
+  color: var(--amber);
+  font-weight: 700;
+}
+
+.pd-decls {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin: 12px 0 8px;
+}
+.pd-decl {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.pd-decl h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+}
+.pd-strategy {
+  margin: 0 0 6px;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.pd-think {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-style: italic;
+}
+.pd-notebook {
+  margin: 6px 0;
+  font-size: 0.82rem;
+}
+.pd-notebook summary {
+  cursor: pointer;
+  color: var(--blue);
+}
+.pd-notebook p {
+  margin: 6px 0 0;
+  color: var(--text-soft);
+  white-space: pre-wrap;
+}
+
+.pd-gen {
+  margin-top: 18px;
+}
+.pd-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pd-match {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.pd-match > summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+}
+.pd-score {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.pd-tape {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 1px;
+}
+.pd-pair {
+  margin-right: 5px;
+}
+.pd-rounds {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pd-round {
+  border-top: 1px solid var(--border);
+  padding-top: 6px;
+  font-size: 0.85rem;
+}
+.pd-round-no {
+  display: inline-block;
+  width: 34px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.pd-round-score {
+  color: var(--muted);
+}
+.pd-thoughts {
+  margin: 4px 0 0 34px;
+  color: var(--text-soft);
+  font-size: 0.82rem;
+}
+.pd-thoughts em {
+  color: var(--muted);
+}
+.pd-reflections {
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+.pd-reflections h4 {
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pd-reflections p {
+  margin: 4px 0;
+  font-size: 0.85rem;
+}
+.pd-rev-title {
+  margin: 14px 0 4px;
+  font-size: 1rem;
+}
