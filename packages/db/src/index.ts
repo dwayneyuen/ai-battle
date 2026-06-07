@@ -390,6 +390,26 @@ export function countMatches(game?: string) {
   return prisma.match.count({ where: game ? { game } : {} });
 }
 
+/** Activity counters for the admin dashboard. */
+export async function getCostStats() {
+  const [totalMatches, totalCalls, byGameRaw, totalSeasons] = await Promise.all(
+    [
+      prisma.match.count(),
+      prisma.modelCall.count(),
+      prisma.match.groupBy({ by: ["game"], _count: { _all: true } }),
+      prisma.pdSeason.count(),
+    ],
+  );
+  return {
+    totalMatches,
+    totalCalls,
+    totalSeasons,
+    byGame: byGameRaw
+      .map((g) => ({ game: g.game, count: g._count._all }))
+      .sort((a, b) => b.count - a.count),
+  };
+}
+
 export function getMatch(id: string) {
   return prisma.match.findUnique({
     where: { id },

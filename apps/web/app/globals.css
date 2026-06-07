@@ -331,6 +331,44 @@ table.providers tr:last-child td {
   margin: 4px 0;
 }
 
+/* Admin cost cards */
+.cost-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+.cost-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+.cost-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.cost-big {
+  font-size: 1.7rem;
+  font-weight: 800;
+}
+.cost-unit {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-left: 2px;
+}
+.cost-sub {
+  margin-top: 6px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.cost-sub.error {
+  color: var(--amber);
+}
+
 /* Tabs (game selector / filters) */
 .tabs {
   display: inline-flex;
