@@ -3,6 +3,7 @@ import {
   CLASSIC_PAYOFF,
   type MatchResult,
   type Move,
+  type MoveReturn,
   type Payoff,
   type PDConfig,
   type RoundOutcome,
@@ -20,9 +21,14 @@ function scoreRound(a: Move, b: Move, p: Payoff): [number, number] {
   return [p.P, p.P];
 }
 
-/** Coerce a strategy's response into a legal move (defaults to Cooperate). */
-function normalize(m: Move): Move {
-  return m === "D" ? "D" : "C";
+/**
+ * Coerce a strategy's response into a legal move (defaults to Cooperate) and
+ * pull out any private thoughts. Accepts both the bare-`Move` form used by the
+ * classic strategies and the `{ move, thoughts }` form used by LLM players.
+ */
+function normalize(r: MoveReturn): { move: Move; thoughts?: string } {
+  if (typeof r === "string") return { move: r === "D" ? "D" : "C" };
+  return { move: r.move === "D" ? "D" : "C", thoughts: r.thoughts };
 }
 
 /**
@@ -53,14 +59,21 @@ export async function runMatch(
       a.next({ round, rounds, myMoves: aMoves, oppMoves: bMoves, rand: randA }),
       b.next({ round, rounds, myMoves: bMoves, oppMoves: aMoves, rand: randB }),
     ]);
-    const ma = normalize(rawA);
-    const mb = normalize(rawB);
+    const { move: ma, thoughts: thoughtsA } = normalize(rawA);
+    const { move: mb, thoughts: thoughtsB } = normalize(rawB);
     const [sa, sb] = scoreRound(ma, mb, payoff);
     aMoves.push(ma);
     bMoves.push(mb);
     scoreA += sa;
     scoreB += sb;
-    outcomes.push({ a: ma, b: mb, scoreA: sa, scoreB: sb });
+    outcomes.push({
+      a: ma,
+      b: mb,
+      scoreA: sa,
+      scoreB: sb,
+      thoughtsA,
+      thoughtsB,
+    });
   }
 
   return { a: a.name, b: b.name, rounds: outcomes, scoreA, scoreB };

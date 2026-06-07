@@ -3,10 +3,17 @@ import { clientFromSpec } from "./clients.js";
 import { llmAgent } from "./llm.js";
 import { mockAgent } from "./mock.js";
 
-export { mockAgent } from "./mock.js";
+export { mockAgent, mockChatClient } from "./mock.js";
 export { llmAgent, type ChatClient } from "./llm.js";
 export { clientFromSpec } from "./clients.js";
 export { pdStrategy, pdStrategyFromSpec } from "./pd.js";
+export {
+  SeasonAgent,
+  type DeclareResult,
+  type GenerationReflection,
+  type OwnMatchLog,
+  type StandingLine,
+} from "./pd-season.js";
 export {
   openaiClient,
   anthropicClient,

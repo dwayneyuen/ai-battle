@@ -13,13 +13,16 @@ datasource db {
 
 /// A competitor: one model behind a `provider:model` spec.
 model Model {
-  id        String        @id @default(cuid())
-  provider  String // "openrouter", "openai", ...
-  spec      String        @unique // full spec, e.g. "openrouter:openai/gpt-5"
-  label     String // display name shown on the site
-  createdAt DateTime      @default(now())
-  ratings   Rating[]
-  seats     MatchPlayer[]
+  id            String         @id @default(cuid())
+  provider      String // "openrouter", "openai", ...
+  spec          String         @unique // full spec, e.g. "openrouter:openai/gpt-5"
+  label         String // display name shown on the site
+  createdAt     DateTime       @default(now())
+  ratings       Rating[]
+  seats         MatchPlayer[]
+  pdMatchesA    PdMatch[]      @relation("PdMatchA")
+  pdMatchesB    PdMatch[]      @relation("PdMatchB")
+  pdReflections PdReflection[]
 }
 
 /// A model's standing in one game (we ship "mafia" first).
@@ -87,4 +90,94 @@ model MatchEvent {
   visibleTo    String[] // seat ids; empty = public
 
   @@index([matchId, idx])
+}
+
+// --- Prisoner's Dilemma "season" -------------------------------------------
+// A season studies how models reason over time: they declare a strategy, play a
+// round robin against every other model, reflect on their OWN results, and revise
+// — across several generations. Reasoning is captured at three levels (per round,
+// per match, per generation) so the evolution of each model's thinking is replayable.
+
+/// A full Prisoner's Dilemma season: an ordered sequence of round-robin generations.
+model PdSeason {
+  id          String         @id @default(cuid())
+  config      Json? // rounds, payoff, field of specs, etc.
+  status      String         @default("completed") // "completed" | "void"
+  createdAt   DateTime       @default(now())
+  finishedAt  DateTime?
+  generations PdGeneration[]
+  matches     PdMatch[]
+  reflections PdReflection[]
+}
+
+/// One round robin within a season. After it, each model reflects and revises.
+model PdGeneration {
+  id          String         @id @default(cuid())
+  season      PdSeason       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  seasonId    String
+  idx         Int // 0-based generation index
+  standings   Json? // snapshot of running totals after this generation
+  createdAt   DateTime       @default(now())
+  matches     PdMatch[]
+  reflections PdReflection[]
+
+  @@index([seasonId])
+}
+
+/// One head-to-head match (a fixed number of rounds) within a generation.
+model PdMatch {
+  id           String         @id @default(cuid())
+  season       PdSeason       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  seasonId     String
+  generation   PdGeneration   @relation(fields: [generationId], references: [id], onDelete: Cascade)
+  generationId String
+  aModel       Model          @relation("PdMatchA", fields: [aModelId], references: [id])
+  aModelId     String
+  bModel       Model          @relation("PdMatchB", fields: [bModelId], references: [id])
+  bModelId     String
+  seed         String?
+  scoreA       Int
+  scoreB       Int
+  rounds       PdRound[]
+  reflections  PdReflection[]
+
+  @@index([seasonId])
+  @@index([generationId])
+}
+
+/// One round within a match: both moves, scores, and each side's private thoughts.
+model PdRound {
+  id        String  @id @default(cuid())
+  match     PdMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  matchId   String
+  idx       Int
+  moveA     String // "C" | "D"
+  moveB     String // "C" | "D"
+  scoreA    Int
+  scoreB    Int
+  thoughtsA String? // seat A's per-round reasoning
+  thoughtsB String? // seat B's per-round reasoning
+
+  @@index([matchId, idx])
+}
+
+/// A captured reflection at one of three levels: "initial", "match", "generation".
+model PdReflection {
+  id           String        @id @default(cuid())
+  model        Model         @relation(fields: [modelId], references: [id])
+  modelId      String
+  level        String // "initial" | "match" | "generation"
+  season       PdSeason      @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  seasonId     String
+  generation   PdGeneration? @relation(fields: [generationId], references: [id], onDelete: Cascade)
+  generationId String?
+  match        PdMatch?      @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  matchId      String?
+  strategy     String? // declared strategy (initial / generation levels)
+  notebook     String? // notebook snapshot (generation level)
+  thoughts     String? // the reflection content
+  createdAt    DateTime      @default(now())
+
+  @@index([seasonId])
+  @@index([modelId])
 }

@@ -2,6 +2,20 @@
 export type Move = "C" | "D";
 
 /**
+ * A move plus the player's private reasoning for it. LLM players return this so
+ * the per-round "why" can be captured; the classic strategies just return a
+ * bare {@link Move} (no thoughts), so `next` accepts either form.
+ */
+export interface MoveResponse {
+  move: Move;
+  /** Private, per-round reasoning. Captured into the transcript, never shown to the opponent. */
+  thoughts?: string;
+}
+
+/** What a {@link Strategy}'s `next` may return: a bare move or a move-with-thoughts. */
+export type MoveReturn = Move | MoveResponse;
+
+/**
  * Payoff values in the classic T > R > P > S ordering (with 2R > T + S so that
  * steady mutual cooperation beats taking turns exploiting each other). Each
  * value is the number of points the player in question receives.
@@ -45,7 +59,7 @@ export interface Strategy {
   name: string;
   /** Optional one-line description, shown in reports. */
   description?: string;
-  next(ctx: MoveContext): Move | Promise<Move>;
+  next(ctx: MoveContext): MoveReturn | Promise<MoveReturn>;
 }
 
 /** The result of a single round within a match. */
@@ -54,6 +68,10 @@ export interface RoundOutcome {
   b: Move;
   scoreA: number;
   scoreB: number;
+  /** Seat A's private reasoning for its move this round, if it provided any. */
+  thoughtsA?: string;
+  /** Seat B's private reasoning for its move this round, if it provided any. */
+  thoughtsB?: string;
 }
 
 /** The result of one head-to-head match (a fixed number of rounds). */

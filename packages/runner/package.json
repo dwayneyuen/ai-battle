@@ -4,6 +4,7 @@
   "type": "module",
   "dependencies": {
     "@ai-battle/catalog": "workspace:*",
+    "@ai-battle/db": "workspace:*",
     "@ai-battle/engine": "workspace:*",
     "@ai-battle/models": "workspace:*",
     "picocolors": "^1.1.1"

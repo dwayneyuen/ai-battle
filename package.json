@@ -8,6 +8,7 @@
   "scripts": {
     "demo": "tsx packages/runner/src/cli.ts",
     "pd": "tsx packages/runner/src/pd.ts",
+    "pd:season": "tsx packages/runner/src/pd-season.ts",
     "catalog": "tsx packages/runner/src/catalog.ts",
     "web:dev": "pnpm --filter web dev",
     "web:build": "pnpm --filter web build",
