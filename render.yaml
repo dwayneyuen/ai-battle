@@ -12,12 +12,12 @@ services:
   - type: web
     name: ai-battle-web
     runtime: node
-    # Free web services sleep after ~15 min idle (cold start on next request).
-    # Use `starter` for a genuinely always-on, never-sleeping process.
-    plan: free
+    # Starter ($7/mo) stays always-on (no cold starts) and supports the
+    # pre-deploy hook used below to sync the schema.
+    plan: starter
     autoDeploy: true
     buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @ai-battle/db generate && pnpm --filter web build
-    # Sync the Prisma schema to Neon on each deploy (turnkey — no local step).
+    # Sync the Prisma schema to Neon once per deploy (after build, before release).
     preDeployCommand: pnpm --filter @ai-battle/db db:push
     startCommand: pnpm --filter web start
     envVars:
