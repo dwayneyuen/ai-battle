@@ -1,17 +1,20 @@
 import { randomUUID } from "node:crypto";
 import {
   runMafia,
+  runRollOff,
   TransportError,
   type GameEvent,
-  type GameResult,
   type MafiaConfig,
   type ModelCall,
+  type RollOffConfig,
 } from "@ai-battle/engine";
-import { agentFromSpec } from "@ai-battle/models";
+import { agentFromSpec, rollOffAgentFromSpec } from "@ai-battle/models";
 import { recordMatch, type ModelCallInput } from "@ai-battle/db";
 
-// Each seat is named after the model it runs — a pun that decodes to the model,
-// so it's obvious who's who. Slugs verified against the live OpenRouter catalog.
+export type GameId = "mafia" | "rolloff";
+
+// Each seat is named after the model it runs — a pun that decodes to the model.
+// Slugs verified against the live OpenRouter catalog.
 const ROSTER = [
   { name: "Gepetto", spec: "openrouter:openai/gpt-5-mini" }, // G-e-P-e-T-to
   { name: "Jiminy", spec: "openrouter:google/gemini-2.5-flash" }, // ~ Gemini
@@ -33,15 +36,24 @@ interface Seat {
   label: string;
 }
 
+interface SeatOutcome {
+  seatId: string;
+  role: string;
+  alive: boolean;
+  forfeited: boolean;
+  won: boolean;
+}
+
 interface LiveMatch {
   id: string;
+  game: GameId;
   status: "running" | "completed" | "void";
   mock: boolean;
   createdAt: number;
   seats: Seat[];
   events: GameEvent[];
   modelCalls: (ModelCall & { idx: number })[];
-  result?: GameResult;
+  outcome?: { winner: string | null; reason: string; seats: SeatOutcome[] };
   error?: string;
 }
 
@@ -56,8 +68,8 @@ function specParts(spec: string): { provider: string; label: string } {
     : { provider: spec.slice(0, i), label: spec.slice(i + 1) };
 }
 
-/** Kick off a Mafia game in the background and return its id immediately. */
-export function startMatch(opts: { mock?: boolean }): string {
+/** Kick off a game in the background and return its id immediately. */
+export function startMatch(opts: { game: GameId; mock?: boolean }): string {
   const id = randomUUID();
   const mock = opts.mock ?? false;
   const seats: Seat[] = ROSTER.map((r, i) => {
@@ -66,6 +78,7 @@ export function startMatch(opts: { mock?: boolean }): string {
   });
   const match: LiveMatch = {
     id,
+    game: opts.game,
     status: "running",
     mock,
     createdAt: Date.now(),
@@ -79,23 +92,9 @@ export function startMatch(opts: { mock?: boolean }): string {
 }
 
 async function play(match: LiveMatch): Promise<void> {
-  const agents: Record<string, ReturnType<typeof agentFromSpec>> = {};
-  for (const s of match.seats) {
-    agents[s.seatId] = agentFromSpec(s.spec, s.seatName);
-  }
-  const config: MafiaConfig = {
-    players: match.seats.map((s) => ({ id: s.seatId, name: s.seatName })),
-    roles: { mafia: 2, doctor: 1, detective: 1 },
-    revealRolesOnDeath: true,
-  };
   try {
-    const result = await runMafia(
-      config,
-      agents,
-      (e) => match.events.push(e),
-      (c) => match.modelCalls.push({ ...c, idx: match.modelCalls.length }),
-    );
-    match.result = result;
+    if (match.game === "rolloff") await playRollOff(match);
+    else await playMafia(match);
     match.status = "completed";
     // Mock games are ephemeral pipeline tests — don't persist or rate them.
     if (!match.mock) await persist(match);
@@ -108,26 +107,86 @@ async function play(match: LiveMatch): Promise<void> {
   }
 }
 
-async function persist(match: LiveMatch): Promise<void> {
-  const result = match.result!;
-  const seatById = new Map(match.seats.map((s) => [s.seatId, s]));
-  const players = result.players.map((p) => {
-    const seat = seatById.get(p.id)!;
-    const onWinningSide =
-      result.winner === "mafia" ? p.role === "mafia" : p.role !== "mafia";
-    return {
+const onEvent = (m: LiveMatch) => (e: GameEvent) => m.events.push(e);
+const onCall = (m: LiveMatch) => (c: ModelCall) =>
+  m.modelCalls.push({ ...c, idx: m.modelCalls.length });
+
+async function playMafia(match: LiveMatch): Promise<void> {
+  const agents = Object.fromEntries(
+    match.seats.map((s) => [s.seatId, agentFromSpec(s.spec, s.seatName)]),
+  );
+  const config: MafiaConfig = {
+    players: match.seats.map((s) => ({ id: s.seatId, name: s.seatName })),
+    roles: { mafia: 2, doctor: 1, detective: 1 },
+    revealRolesOnDeath: true,
+  };
+  const result = await runMafia(config, agents, onEvent(match), onCall(match));
+  match.outcome = {
+    winner: result.winner,
+    reason: result.reason,
+    seats: result.players.map((p) => {
+      const onWinningSide =
+        result.winner === "mafia" ? p.role === "mafia" : p.role !== "mafia";
+      return {
+        seatId: p.id,
+        role: p.role,
+        alive: p.alive,
+        forfeited: p.forfeited ?? false,
+        won: onWinningSide && !(p.forfeited ?? false),
+      };
+    }),
+  };
+}
+
+async function playRollOff(match: LiveMatch): Promise<void> {
+  const agents = Object.fromEntries(
+    match.seats.map((s) => [
+      s.seatId,
+      rollOffAgentFromSpec(s.spec, s.seatName),
+    ]),
+  );
+  const config: RollOffConfig = {
+    players: match.seats.map((s) => ({ id: s.seatId, name: s.seatName })),
+    target: 25,
+  };
+  const result = await runRollOff(
+    config,
+    agents,
+    onEvent(match),
+    onCall(match),
+  );
+  match.outcome = {
+    winner: result.winnerName,
+    reason: result.reason,
+    seats: result.players.map((p) => ({
       seatId: p.id,
-      seatName: p.name,
+      role: "player",
+      alive: !p.forfeited,
+      forfeited: p.forfeited,
+      won: p.won,
+    })),
+  };
+}
+
+async function persist(match: LiveMatch): Promise<void> {
+  const outcome = match.outcome;
+  if (!outcome) return;
+  const seatById = new Map(match.seats.map((s) => [s.seatId, s]));
+  const players = outcome.seats.map((o) => {
+    const seat = seatById.get(o.seatId)!;
+    return {
+      seatId: o.seatId,
+      seatName: seat.seatName,
       spec: seat.spec,
       label: seat.label,
       provider: seat.provider,
-      role: p.role,
-      alive: p.alive,
-      forfeited: p.forfeited ?? false,
-      won: onWinningSide && !(p.forfeited ?? false),
+      role: o.role,
+      alive: o.alive,
+      forfeited: o.forfeited,
+      won: o.won,
     };
   });
-  const events = result.events.map((e, idx) => ({
+  const events = match.events.map((e, idx) => ({
     idx,
     type: e.type,
     message: e.message,
@@ -156,10 +215,10 @@ async function persist(match: LiveMatch): Promise<void> {
   try {
     await recordMatch({
       id: match.id,
-      game: "mafia",
+      game: match.game,
       status: "completed",
-      winner: result.winner,
-      reason: result.reason,
+      winner: outcome.winner ?? undefined,
+      reason: outcome.reason,
       config: { mock: match.mock, roster: match.seats.map((s) => s.spec) },
       players,
       events,
@@ -172,13 +231,15 @@ async function persist(match: LiveMatch): Promise<void> {
 
 /** A JSON-safe view of a live match for the API. */
 export function snapshot(m: LiveMatch, includeCalls = false) {
+  const seatById = new Map(m.seats.map((s) => [s.seatId, s]));
   return {
     id: m.id,
+    game: m.game,
     status: m.status,
     source: "live" as const,
     mock: m.mock,
-    winner: m.result?.winner ?? null,
-    reason: m.result?.reason ?? null,
+    winner: m.outcome?.winner ?? null,
+    reason: m.outcome?.reason ?? null,
     error: m.error ?? null,
     players: m.seats.map((s) => ({
       seatId: s.seatId,
@@ -193,9 +254,12 @@ export function snapshot(m: LiveMatch, includeCalls = false) {
       phase: e.phase,
       private: Boolean(e.visibleTo),
     })),
-    forfeits:
-      m.result?.forfeits.map((f) => ({ name: f.name, reason: f.reason })) ?? [],
-    // The system prompt is identical for every call, so send it once.
+    forfeits: (m.outcome?.seats ?? [])
+      .filter((s) => s.forfeited)
+      .map((s) => ({
+        name: seatById.get(s.seatId)?.seatName ?? s.seatId,
+        reason: "forfeited",
+      })),
     rules: includeCalls ? (m.modelCalls[0]?.system ?? null) : undefined,
     calls: includeCalls
       ? m.modelCalls.map((c) => ({
@@ -204,8 +268,8 @@ export function snapshot(m: LiveMatch, includeCalls = false) {
           decisionType: c.decisionType,
           day: c.day,
           phase: c.phase,
-          prompt: c.user, // exactly what the model saw
-          response: c.raw, // exactly what it returned
+          prompt: c.user,
+          response: c.raw,
           thoughts: c.thoughts ?? null,
           valid: c.valid,
           latencyMs: c.latencyMs,

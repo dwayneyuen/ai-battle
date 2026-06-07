@@ -22,8 +22,14 @@ interface Call {
   valid: boolean;
   latencyMs: number | null;
 }
+const GAME_NAMES: Record<string, string> = {
+  mafia: "Mafia",
+  rolloff: "Roll-Off",
+};
+
 interface Snap {
   id: string;
+  game?: string;
   status: "running" | "completed" | "void";
   mock?: boolean;
   winner: string | null;
@@ -84,7 +90,7 @@ export function MatchView({ id }: { id: string }) {
     <>
       <section className="hero">
         <h1>
-          Mafia match{" "}
+          {GAME_NAMES[snap.game ?? "mafia"] ?? "Game"} match{" "}
           {snap.mock ? <span className="status planned">mock</span> : null}
         </h1>
         <p>

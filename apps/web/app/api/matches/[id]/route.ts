@@ -21,6 +21,7 @@ export async function GET(
 
   return Response.json({
     id: db.id,
+    game: db.game,
     status: db.status,
     source: "db",
     mock: (db.config as unknown as { mock?: boolean } | null)?.mock ?? false,

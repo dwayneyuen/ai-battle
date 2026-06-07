@@ -332,6 +332,17 @@ table.providers tr:last-child td {
 }
 
 /* Play / start buttons */
+.game-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.game-row-label {
+  font-weight: 700;
+  min-width: 84px;
+}
 .start-buttons {
   display: flex;
   gap: 12px;
