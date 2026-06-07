@@ -36,12 +36,12 @@ function buildUserPrompt(ctx: AgentContext): string {
   let format: string;
   if (ctx.decision.type === "bid") {
     const max = ctx.decision.maxUrgency ?? 3;
-    format = `Respond ONLY with JSON: {"urgency": <integer 0-${max}>, "reasoning": "<private thoughts>"}`;
+    format = `Respond ONLY with JSON: {"urgency": <integer 0-${max}>, "thoughts": "<private thoughts>"}`;
   } else if (ctx.decision.type === "statement") {
-    format = `Respond ONLY with JSON: {"say": "<your statement, 1-3 sentences>", "reasoning": "<private thoughts>"}`;
+    format = `Respond ONLY with JSON: {"say": "<your statement, 1-3 sentences>", "thoughts": "<private thoughts>"}`;
   } else {
     format = `Choose a target by player id from these options: [${ctx.decision.options.join(", ")}].
-Respond ONLY with JSON: {"target": "<player id>", "reasoning": "<private thoughts>"}`;
+Respond ONLY with JSON: {"target": "<player id>", "thoughts": "<private thoughts>"}`;
   }
 
   return `You are ${ctx.you.name} [${ctx.you.id}]. Your secret role: ${ctx.you.role.toUpperCase()}.
@@ -65,7 +65,7 @@ function parseJson(raw: string): {
   target?: string;
   say?: string;
   urgency?: number;
-  reasoning?: string;
+  thoughts?: string;
 } {
   const fenced = raw.replace(/```json\s*|\s*```/g, "");
   const start = fenced.indexOf("{");
@@ -98,7 +98,7 @@ export function llmAgent(client: ChatClient, displayName?: string): Agent {
         text: parsed.say,
         urgency:
           typeof parsed.urgency === "number" ? parsed.urgency : undefined,
-        reasoning: parsed.reasoning,
+        thoughts: parsed.thoughts,
       };
     },
   };

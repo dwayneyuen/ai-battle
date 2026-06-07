@@ -160,7 +160,7 @@ export async function runMafia(
       );
       return {
         ok: true,
-        value: { urgency: clamped, reasoning: result.reasoning },
+        value: { urgency: clamped, thoughts: result.thoughts },
       };
     }
     if (decision.options.length > 0) {
@@ -197,11 +197,11 @@ export async function runMafia(
     const v = validate(result, decision);
     if (!v.ok)
       return { ok: false, reason: v.reason, raw: JSON.stringify(result) };
-    if (v.value.reasoning) {
+    if (v.value.thoughts) {
       emit({
         type: "thought",
         actor: player.id,
-        message: `${player.name} (thinking): ${v.value.reasoning}`,
+        message: `${player.name} (thinking): ${v.value.thoughts}`,
         visibleTo: [player.id],
       });
     }

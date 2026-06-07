@@ -26,7 +26,7 @@ History so far:
 ${history}
 
 Choose your move for this round.
-Respond ONLY with JSON: {"move": "C" or "D", "reasoning": "<brief>"}`;
+Respond ONLY with JSON: {"move": "C" or "D", "thoughts": "<brief>"}`;
 }
 
 /** Tolerantly extract C/D from a model response. */

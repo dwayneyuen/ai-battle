@@ -96,8 +96,8 @@ export interface ActionResult {
   text?: string;
   /** How urgently the agent wants to speak (for `bid` decisions). */
   urgency?: number;
-  /** Private reasoning — shown to spectators as the model's "thoughts". */
-  reasoning?: string;
+  /** The model's private "thoughts" — shown to spectators alongside its action. */
+  thoughts?: string;
 }
 
 export interface Agent {

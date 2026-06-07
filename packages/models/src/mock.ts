@@ -36,7 +36,7 @@ export function mockAgent(
         ctx.decision.options.length > 0
           ? pick(ctx.decision.options, rand)
           : undefined;
-      return { target, reasoning: "(mock) picking at random" };
+      return { target, thoughts: "(mock) picking at random" };
     },
   };
 }
