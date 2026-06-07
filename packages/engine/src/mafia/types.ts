@@ -8,6 +8,8 @@ export interface Player {
   name: string; // display name, usually the model, e.g. "GPT-5 (Alice)"
   role: Role;
   alive: boolean;
+  /** Set when the player was removed for an invalid/illegal response. */
+  forfeited?: boolean;
 }
 
 /**
@@ -26,14 +28,17 @@ export interface GameEvent {
     | "game-start"
     | "role-assigned"
     | "night-falls"
+    | "mafia-chat"
     | "mafia-target"
     | "investigation"
     | "death"
     | "no-death"
     | "day-breaks"
+    | "bid"
     | "statement"
     | "vote"
     | "elimination"
+    | "forfeit"
     | "thought"
     | "result";
   day: number;
@@ -51,6 +56,7 @@ export type DecisionType =
   | "mafia-kill"
   | "doctor-save"
   | "detective-investigate"
+  | "bid"
   | "statement"
   | "vote";
 
@@ -59,10 +65,12 @@ export interface Decision {
   type: DecisionType;
   /** Human-readable instruction for the agent. */
   prompt: string;
-  /** Legal target player ids. Empty for free-text statements. */
+  /** Legal target player ids. Empty for free-text statements and bids. */
   options: string[];
   /** Whether a free-text `text` response is expected/allowed. */
   allowText: boolean;
+  /** For `bid` decisions: the top of the urgency scale (e.g. 3). */
+  maxUrgency?: number;
 }
 
 /** Everything an agent is allowed to know when making a decision. */
@@ -86,6 +94,8 @@ export interface ActionResult {
   target?: string;
   /** Free-text statement (for discussion). */
   text?: string;
+  /** How urgently the agent wants to speak (for `bid` decisions). */
+  urgency?: number;
   /** Private reasoning — shown to spectators as the model's "thoughts". */
   reasoning?: string;
 }
@@ -95,14 +105,48 @@ export interface Agent {
   decide(ctx: AgentContext): Promise<ActionResult>;
 }
 
+/**
+ * Thrown by an agent when the underlying model call fails for INFRASTRUCTURE
+ * reasons (network, 5xx, rate limit). This is not the model's fault, so the
+ * engine lets it bubble up to void the match — it is never a forfeit.
+ */
+export class TransportError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TransportError";
+  }
+}
+
+/** Tunables for a volunteer-loop discussion. */
+export interface DiscussionConfig {
+  /** Hard cap on total messages, guaranteeing the discussion ends. */
+  maxMessages: number;
+  /** Max times one player may take the floor. Curbs monopolies. */
+  perPlayer: number;
+  /** Top of the bid urgency scale. */
+  maxUrgency: number;
+}
+
 export interface MafiaConfig {
   players: { id: string; name: string }[];
   roles: { mafia: number; doctor: number; detective: number };
   seed?: number;
-  /** How many times each living player speaks during day discussion. */
-  discussionRounds?: number;
   /** Reveal a player's role when they die. Classic Mafia does. */
   revealRolesOnDeath?: boolean;
+  /** Daytime public discussion settings. */
+  discussion?: Partial<DiscussionConfig>;
+  /** Mafia-only night coordination chat. Set maxMessages: 0 to disable. */
+  mafiaChat?: Partial<DiscussionConfig>;
+}
+
+/** A recorded forfeit — a model that broke the protocol and was removed. */
+export interface Forfeit {
+  id: string;
+  name: string;
+  decisionType: DecisionType;
+  reason: string;
+  raw?: string;
+  day: number;
 }
 
 export interface GameResult {
@@ -111,4 +155,5 @@ export interface GameResult {
   survivors: string[];
   players: Player[];
   events: GameEvent[];
+  forfeits: Forfeit[];
 }

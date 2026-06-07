@@ -11,7 +11,8 @@ const FLAVOR = [
 
 /**
  * A zero-cost agent that plays legally at random. Lets the whole pipeline run
- * with no API keys, and is a useful baseline opponent for real models.
+ * with no API keys, and is a useful baseline opponent for real models. It
+ * always returns a valid, in-bounds response, so it never forfeits.
  */
 export function mockAgent(
   name: string,
@@ -22,6 +23,11 @@ export function mockAgent(
     name,
     async decide(ctx) {
       const others = ctx.players.filter((p) => p.alive && p.id !== ctx.you.id);
+      if (ctx.decision.type === "bid") {
+        // Bid 0..maxUrgency, skewed so the room sometimes falls silent.
+        const max = ctx.decision.maxUrgency ?? 3;
+        return { urgency: Math.floor(rand() * (max + 1)) };
+      }
       if (ctx.decision.type === "statement") {
         const who = others.length ? pick(others, rand).name : "someone";
         return { text: pick(FLAVOR, rand).replaceAll("{p}", who) };

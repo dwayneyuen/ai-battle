@@ -113,7 +113,7 @@ Spec format is `provider:model`. The model part may contain `:` or `/`
 | `--models`       | all mock | Comma-separated `provider:model` specs, one per seat |
 | `--players`      | `7`      | Number of players (2–10)                             |
 | `--seed`         | random   | Seed for reproducible role assignment & tie-breaks   |
-| `--rounds`       | `1`      | Discussion statements per player each day            |
+| `--messages`     | `24`     | Max statements in a day's volunteer-loop discussion  |
 | `--hide-private` | off      | Hide private events (night actions, model thoughts)  |
 
 ## Architecture

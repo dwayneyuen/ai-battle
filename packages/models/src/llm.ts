@@ -1,4 +1,8 @@
-import type { Agent, AgentContext } from "@ai-battle/engine";
+import {
+  type Agent,
+  type AgentContext,
+  TransportError,
+} from "@ai-battle/engine";
 
 /** A minimal text-completion interface every provider adapter implements. */
 export interface ChatClient {
@@ -11,8 +15,12 @@ const RULES = `You are playing the social deduction game Mafia against other AI 
 Roles: MAFIA (secretly kill one town member each night, then lie by day), DOCTOR
 (protect one player each night), DETECTIVE (learn if one player is mafia each night),
 and VILLAGER (no night power). Town wins by eliminating all mafia; mafia win when they
-equal or outnumber the town. Play to win your team. Be strategic, concise, and in
-character.`;
+equal or outnumber the town.
+
+Discussion is a free-for-all: each round you privately "bid" how urgently you want to
+speak, and the keenest player gets the floor. Play to win your team. Be strategic,
+concise, and in character. Always reply with the exact JSON requested — an invalid
+or illegal response means you forfeit and are removed from the game.`;
 
 function buildUserPrompt(ctx: AgentContext): string {
   const roster = ctx.players
@@ -26,8 +34,11 @@ function buildUserPrompt(ctx: AgentContext): string {
     : "(nothing has happened yet)";
 
   let format: string;
-  if (ctx.decision.type === "statement") {
-    format = `Respond ONLY with JSON: {"say": "<your public statement, 1-3 sentences>", "reasoning": "<private thoughts>"}`;
+  if (ctx.decision.type === "bid") {
+    const max = ctx.decision.maxUrgency ?? 3;
+    format = `Respond ONLY with JSON: {"urgency": <integer 0-${max}>, "reasoning": "<private thoughts>"}`;
+  } else if (ctx.decision.type === "statement") {
+    format = `Respond ONLY with JSON: {"say": "<your statement, 1-3 sentences>", "reasoning": "<private thoughts>"}`;
   } else {
     format = `Choose a target by player id from these options: [${ctx.decision.options.join(", ")}].
 Respond ONLY with JSON: {"target": "<player id>", "reasoning": "<private thoughts>"}`;
@@ -53,6 +64,7 @@ ${format}`;
 function parseJson(raw: string): {
   target?: string;
   say?: string;
+  urgency?: number;
   reasoning?: string;
 } {
   const fenced = raw.replace(/```json\s*|\s*```/g, "");
@@ -71,11 +83,21 @@ export function llmAgent(client: ChatClient, displayName?: string): Agent {
   return {
     name: displayName ?? client.label,
     async decide(ctx) {
-      const raw = await client.complete(RULES, buildUserPrompt(ctx));
+      let raw: string;
+      try {
+        raw = await client.complete(RULES, buildUserPrompt(ctx));
+      } catch (err) {
+        // API/network failure is infrastructure, not the model's fault → void.
+        throw new TransportError(
+          `${client.label} call failed: ${(err as Error).message}`,
+        );
+      }
       const parsed = parseJson(raw);
       return {
         target: parsed.target,
         text: parsed.say,
+        urgency:
+          typeof parsed.urgency === "number" ? parsed.urgency : undefined,
         reasoning: parsed.reasoning,
       };
     },

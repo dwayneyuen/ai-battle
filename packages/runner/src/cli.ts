@@ -47,14 +47,19 @@ function colorFor(e: GameEvent): (s: string) => string {
     case "death":
     case "elimination":
       return (s) => pc.bold(pc.red(s));
+    case "forfeit":
+      return (s) => pc.bold(pc.yellow(s));
     case "statement":
       return (s) => pc.white(s);
+    case "mafia-chat":
+      return (s) => pc.dim(pc.red(s));
     case "vote":
       return (s) => pc.magenta(s);
     case "thought":
     case "role-assigned":
     case "investigation":
     case "mafia-target":
+    case "bid":
       return (s) => pc.dim(pc.gray(s));
     default:
       return (s) => s;
@@ -65,7 +70,7 @@ async function main() {
   const { args, flags } = parseArgs(process.argv.slice(2));
   const playerCount = Math.min(Number(args.players ?? 7), NAMES.length);
   const seed = args.seed ? Number(args.seed) : undefined;
-  const discussionRounds = args.rounds ? Number(args.rounds) : 1;
+  const maxMessages = args.messages ? Number(args.messages) : undefined;
   const showPrivate = !flags.has("hide-private");
 
   // Model assignment: --models "anthropic:claude-opus-4-8,openai:gpt-5,..."
@@ -90,8 +95,8 @@ async function main() {
     players,
     roles: { mafia: playerCount >= 7 ? 2 : 1, doctor: 1, detective: 1 },
     seed,
-    discussionRounds,
     revealRolesOnDeath: true,
+    ...(maxMessages ? { discussion: { maxMessages } } : {}),
   };
 
   console.log(pc.bold(pc.cyan("\n  AI BATTLE — Mafia\n")));
