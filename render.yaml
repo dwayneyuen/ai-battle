@@ -16,7 +16,10 @@ services:
     # pre-deploy hook used below to sync the schema.
     plan: starter
     autoDeploy: true
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @ai-battle/db generate && pnpm --filter web build
+    # Render provides pnpm natively (it reads pnpm-lock.yaml + the
+    # packageManager field) — do NOT run `corepack enable`, which fails on
+    # Render's read-only /usr/bin.
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @ai-battle/db generate && pnpm --filter web build
     # Sync the Prisma schema to Neon once per deploy (after build, before release).
     preDeployCommand: pnpm --filter @ai-battle/db db:push
     startCommand: pnpm --filter web start
