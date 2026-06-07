@@ -16,16 +16,20 @@ import {
   type Role,
 } from "./types.js";
 
+// Cost-conscious defaults: every player bids each tick, so call volume scales
+// with these. Kept modest so a full game stays cheap on small models.
 const DEFAULT_DISCUSSION: DiscussionConfig = {
-  maxMessages: 24,
-  perPlayer: 4,
-  maxUrgency: 3,
-};
-const DEFAULT_MAFIA_CHAT: DiscussionConfig = {
-  maxMessages: 6,
+  maxMessages: 12,
   perPlayer: 3,
   maxUrgency: 3,
 };
+const DEFAULT_MAFIA_CHAT: DiscussionConfig = {
+  maxMessages: 4,
+  perPlayer: 2,
+  maxUrgency: 3,
+};
+/** Recent transcript lines a player sees when bidding (trims input tokens). */
+const DEFAULT_BID_HISTORY_LIMIT = 12;
 
 /**
  * Runs a complete game of Mafia. Daytime discussion uses a "volunteer loop":
@@ -43,6 +47,7 @@ export async function runMafia(
   const revealRoles = config.revealRolesOnDeath ?? true;
   const discussionCfg = { ...DEFAULT_DISCUSSION, ...config.discussion };
   const mafiaChatCfg = { ...DEFAULT_MAFIA_CHAT, ...config.mafiaChat };
+  const bidHistoryLimit = config.bidHistoryLimit ?? DEFAULT_BID_HISTORY_LIMIT;
 
   const players = assignRoles(config, rand);
   const byId = new Map(players.map((p) => [p.id, p]));
@@ -92,10 +97,15 @@ export async function runMafia(
 
   // Builds the knowledge an agent is allowed to use for a decision.
   function contextFor(player: Player, decision: Decision): AgentContext {
-    const visibleHistory = events
+    let visibleHistory = events
       .filter((e) => !e.visibleTo || e.visibleTo.includes(player.id))
       .filter((e) => e.type !== "role-assigned" && e.type !== "bid")
       .map((e) => e.message);
+    // Bids are frequent and low-stakes — show only the tail of the transcript
+    // to keep their input-token cost down. Real moves still see everything.
+    if (decision.type === "bid" && visibleHistory.length > bidHistoryLimit) {
+      visibleHistory = visibleHistory.slice(-bidHistoryLimit);
+    }
 
     const notes: string[] = [];
     if (player.role === "detective") {

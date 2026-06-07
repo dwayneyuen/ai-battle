@@ -137,6 +137,12 @@ export interface MafiaConfig {
   discussion?: Partial<DiscussionConfig>;
   /** Mafia-only night coordination chat. Set maxMessages: 0 to disable. */
   mafiaChat?: Partial<DiscussionConfig>;
+  /**
+   * How many recent transcript lines a player sees when *bidding* to speak.
+   * Bids are the most frequent call, so trimming their context is the biggest
+   * single lever on cost. Statements/votes/night actions still see everything.
+   */
+  bidHistoryLimit?: number;
 }
 
 /** A recorded forfeit — a model that broke the protocol and was removed. */
