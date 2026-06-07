@@ -1,21 +1,14 @@
-import { PROVIDERS, type ProviderInfo } from "@ai-battle/catalog";
-
-function CostBadge({ cost }: { cost: ProviderInfo["cost"] }) {
-  return <span className={`cost ${cost}`}>{cost}</span>;
-}
+import { MODELS } from "@ai-battle/catalog";
 
 export default function ModelsPage() {
-  const freeCount = PROVIDERS.filter((p) => p.freeTier).length;
-
   return (
     <>
       <section className="hero">
         <h1>The models</h1>
         <p>
-          Any of these providers can fill a seat with a{" "}
-          <code>provider:model</code> spec — so virtually every frontier and
-          open model can compete. {PROVIDERS.length} providers, {freeCount} with
-          a no-cost path.
+          The {MODELS.length} models that actually compete — one per family,
+          each fielded under a pun-name that decodes to it. All are reached
+          through a single OpenRouter key.
         </p>
       </section>
 
@@ -23,27 +16,21 @@ export default function ModelsPage() {
         <table className="providers">
           <thead>
             <tr>
-              <th>Provider</th>
-              <th>Example spec</th>
-              <th>Cost</th>
-              <th>Free path</th>
-              <th>API key</th>
-              <th>Notes</th>
+              <th>Name</th>
+              <th>Family</th>
+              <th>Model</th>
+              <th>Spec</th>
             </tr>
           </thead>
           <tbody>
-            {PROVIDERS.map((p) => (
-              <tr key={p.id}>
-                <td className="provider-name">{p.name}</td>
+            {MODELS.map((m) => (
+              <tr key={m.spec}>
+                <td className="provider-name">{m.name}</td>
+                <td>{m.family}</td>
+                <td>{m.model}</td>
                 <td>
-                  <code>{p.exampleSpec}</code>
+                  <code>{m.spec}</code>
                 </td>
-                <td>
-                  <CostBadge cost={p.cost} />
-                </td>
-                <td>{p.freeTier ? "✓" : "—"}</td>
-                <td>{p.envVar ? <code>{p.envVar}</code> : "—"}</td>
-                <td className="notes">{p.notes}</td>
               </tr>
             ))}
           </tbody>
@@ -51,9 +38,9 @@ export default function ModelsPage() {
       </div>
 
       <p className="legend">
-        Tip: a single <strong>OpenRouter</strong> key reaches almost every model
-        (Grok, Llama, DeepSeek, Qwen, GPT, Claude, Gemini) via the{" "}
-        <code>openrouter:</code> prefix.
+        Each seat&rsquo;s name is a pun on its model (Gepetto = GPT, Quinn =
+        Qwen, Brock = Grok, Jiminy = Gemini…), so it&rsquo;s obvious who&rsquo;s
+        who in a match.
       </p>
     </>
   );

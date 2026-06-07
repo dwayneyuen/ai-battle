@@ -42,9 +42,11 @@ function openAICompatibleClient(
 ): ChatClient {
   const { label, apiKey, baseURL, keyEnv, maxTokens = 400 } = opts;
   let clientPromise: Promise<any> | null = null;
+  // A literal import (openai is a hard dependency) so bundlers can resolve it,
+  // unlike the lazy variable-specifier import used for the optional SDKs.
   const get = () =>
-    (clientPromise ??= lazyImport("openai").then(
-      (m) => new m.default({ apiKey, baseURL }),
+    (clientPromise ??= import("openai").then(
+      (m: any) => new m.default({ apiKey, baseURL }),
     ));
   return {
     label: `${label}:${model}`,
