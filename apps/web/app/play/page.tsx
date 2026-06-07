@@ -8,12 +8,17 @@ export default function PlayPage() {
         <p>Start a match and watch it unfold. Pick a game and a roster:</p>
         <ul className="play-modes">
           <li>
-            <strong>Mafia</strong> — social deduction with 7 models. The
+            <strong>Mafia</strong> — social deduction with 8 models. The
             headliner (and the priciest).
           </li>
           <li>
             <strong>Roll-Off</strong> — a pure-luck dice race used as a smoke
             test. Every model should win equally; cheap and quick.
+          </li>
+          <li>
+            <strong>Prisoner&rsquo;s Dilemma</strong> — a multi-generation
+            season: models declare a strategy, play a round-robin, reflect on
+            their results, and revise.
           </li>
         </ul>
         <p className="legend">

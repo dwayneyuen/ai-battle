@@ -1,5 +1,5 @@
 import { getCostStats } from "@ai-battle/db";
-import { getOpenRouterUsage } from "../../lib/costs";
+import { getNeonUsage, getOpenRouterUsage } from "../../lib/costs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,8 +32,9 @@ export default async function AdminPage({
     );
   }
 
-  const [or, stats] = await Promise.all([
+  const [or, neon, stats] = await Promise.all([
     getOpenRouterUsage(),
+    getNeonUsage(),
     getCostStats().catch(() => null),
   ]);
   const fixedMonthly = RENDER_MONTHLY + NEON_MONTHLY;
@@ -79,14 +80,33 @@ export default async function AdminPage({
 
         <div className="cost-card">
           <div className="cost-label">Neon · Postgres</div>
-          <div className="cost-big">
-            {usd(NEON_MONTHLY)}
-            <span className="cost-unit">/mo</span>
-          </div>
-          <div className="cost-sub">
-            {NEON_MONTHLY === 0 ? "free tier" : "paid plan"} · estimate (set
-            NEON_MONTHLY_USD)
-          </div>
+          {neon.ok ? (
+            <>
+              <div className="cost-big">
+                {neon.computeHours.toFixed(1)}
+                <span className="cost-unit">compute-hrs</span>
+              </div>
+              <div className="cost-sub">
+                this billing period · {neon.projects} project
+                {neon.projects === 1 ? "" : "s"}
+                {neon.storageGiB != null
+                  ? ` · ${neon.storageGiB.toFixed(2)} GiB storage`
+                  : ""}{" "}
+                · ~{usd(NEON_MONTHLY)}/mo plan
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="cost-big">
+                {usd(NEON_MONTHLY)}
+                <span className="cost-unit">/mo</span>
+              </div>
+              <div className="cost-sub">
+                {NEON_MONTHLY === 0 ? "free tier" : "paid plan"} · estimate (
+                {neon.error})
+              </div>
+            </>
+          )}
         </div>
 
         <div className="cost-card">
