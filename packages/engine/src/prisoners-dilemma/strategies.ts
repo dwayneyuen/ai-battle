@@ -1,4 +1,4 @@
-import type { Move, Strategy } from "./types.js";
+import type { Move, Strategy } from "./types";
 
 const C: Move = "C";
 const D: Move = "D";

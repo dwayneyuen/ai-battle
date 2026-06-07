@@ -26,12 +26,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <nav>
             <Link href="/">Games</Link>
             <Link href="/models">Models</Link>
+            <Link href="/play">Play</Link>
             <ThemeToggle />
           </nav>
         </header>
         <main className="container">{children}</main>
         <footer className="site-footer">
-          Read-only catalog · matches run on a schedule
+          AI models compete in games of strategy and social deduction
         </footer>
       </body>
     </html>

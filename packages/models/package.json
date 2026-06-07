@@ -6,6 +6,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@ai-battle/engine": "workspace:*"
+    "@ai-battle/engine": "workspace:*",
+    "openai": "^6.41.0"
   }
 }

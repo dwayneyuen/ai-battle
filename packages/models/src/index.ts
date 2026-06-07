@@ -1,12 +1,12 @@
 import type { Agent } from "@ai-battle/engine";
-import { clientFromSpec } from "./clients.js";
-import { llmAgent } from "./llm.js";
-import { mockAgent } from "./mock.js";
+import { clientFromSpec } from "./clients";
+import { llmAgent } from "./llm";
+import { mockAgent } from "./mock";
 
-export { mockAgent } from "./mock.js";
-export { llmAgent, type ChatClient } from "./llm.js";
-export { clientFromSpec } from "./clients.js";
-export { pdStrategy, pdStrategyFromSpec } from "./pd.js";
+export { mockAgent } from "./mock";
+export { llmAgent, type ChatClient } from "./llm";
+export { clientFromSpec } from "./clients";
+export { pdStrategy, pdStrategyFromSpec } from "./pd";
 export {
   openaiClient,
   anthropicClient,
@@ -18,7 +18,7 @@ export {
   deepseekClient,
   mistralClient,
   togetherClient,
-} from "./providers.js";
+} from "./providers";
 
 /**
  * Build an agent from a short `provider:model` spec. The model part may itself

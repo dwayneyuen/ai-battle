@@ -1,4 +1,4 @@
-import type { ChatClient } from "./llm.js";
+import type { ChatClient } from "./llm";
 
 /**
  * Provider adapters. The SDKs are imported lazily (and via an indirect
