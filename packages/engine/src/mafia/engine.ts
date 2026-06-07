@@ -1,4 +1,4 @@
-import { mulberry32, shuffle } from "../rng.js";
+import { mulberry32, shuffle } from "../rng";
 import {
   TransportError,
   type ActionResult,
@@ -10,11 +10,12 @@ import {
   type GameEvent,
   type GameResult,
   type MafiaConfig,
+  type ModelCall,
   type Phase,
   type Player,
   type PlayerView,
   type Role,
-} from "./types.js";
+} from "./types";
 
 // Cost-conscious defaults: every player bids each tick, so call volume scales
 // with these. Kept modest so a full game stays cheap on small models.
@@ -42,6 +43,7 @@ export async function runMafia(
   config: MafiaConfig,
   agents: Record<string, Agent>,
   onEvent: (e: GameEvent) => void = () => {},
+  onModelCall: (c: ModelCall) => void = () => {},
 ): Promise<GameResult> {
   const rand = mulberry32(config.seed ?? (Math.random() * 2 ** 32) >>> 0);
   const revealRoles = config.revealRolesOnDeath ?? true;
@@ -195,6 +197,28 @@ export async function runMafia(
       return { ok: false, reason: `agent error: ${(err as Error).message}` };
     }
     const v = validate(result, decision);
+    // Full log of the call — emitted whether or not it was valid (a forfeit is
+    // exactly the kind of thing we want the raw response for).
+    if (result.diagnostics) {
+      onModelCall({
+        seatId: player.id,
+        seatName: player.name,
+        decisionType: decision.type,
+        day,
+        phase,
+        system: result.diagnostics.system,
+        user: result.diagnostics.user,
+        raw: result.diagnostics.raw,
+        parsed: {
+          target: result.target,
+          text: result.text,
+          urgency: result.urgency,
+        },
+        thoughts: result.thoughts,
+        valid: v.ok,
+        latencyMs: result.diagnostics.latencyMs,
+      });
+    }
     if (!v.ok)
       return { ok: false, reason: v.reason, raw: JSON.stringify(result) };
     if (v.value.thoughts) {

@@ -1,4 +1,4 @@
-import type { ChatClient } from "./llm.js";
+import type { ChatClient } from "./llm";
 import {
   anthropicClient,
   deepseekClient,
@@ -10,7 +10,7 @@ import {
   openrouterClient,
   togetherClient,
   xaiClient,
-} from "./providers.js";
+} from "./providers";
 
 /**
  * Build a {@link ChatClient} from a short `provider:model` spec. The model part
