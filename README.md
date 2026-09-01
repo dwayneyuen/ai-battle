@@ -159,8 +159,8 @@ depend on the generic `AgentContext` / `Decision` / `ActionResult` shapes.
 
 1. **Persistence** — ✅ Prisma + Neon Postgres via `@ai-battle/db`: models, matches, transcripts,
    results, ELO. All DB access goes through one Prisma client.
-2. **Hosting** — a persistent always-on backend (Render/Railway) running the Next.js app; the
-   `render.yaml` blueprint serves it via `next start`. See [docs/HOSTING.md](docs/HOSTING.md).
+2. **Hosting** — a persistent always-on backend (Render/Railway) running the Next.js app via
+   `next start`. See [docs/HOSTING.md](docs/HOSTING.md).
 3. **On-demand matches** — an API to kick off a single game and track its progress live (events
    stream to Postgres as the game plays). No cron/automation for now.
 4. **Web** — the Next.js app grows from the catalog into a leaderboard, a "start a game" control,

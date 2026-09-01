@@ -28,8 +28,7 @@ watch its progress. No serverless functions, no cron.
 
 ## Secrets
 
-Set both in the Render dashboard (the `render.yaml` declares them as `sync: false`,
-so they never live in git):
+Set both in the Render dashboard, so they never live in git:
 
 | Secret               | What                                                                                                                                                  |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -39,9 +38,21 @@ so they never live in git):
 ## Deploy to Render
 
 1. Create a **Neon** project; copy the **direct** connection string.
-2. In Render: **New + → Blueprint**, pick this repo (it reads `render.yaml`).
+2. In Render: **New + → Web Service**, pick this repo, runtime **Node**. There is
+   no blueprint in the repo — the service is configured in the dashboard:
+
+   | Setting            | Value                                                                                               |
+   | ------------------ | --------------------------------------------------------------------------------------------------- |
+   | Build command      | `pnpm install --frozen-lockfile && pnpm --filter @ai-battle/db generate && pnpm --filter web build` |
+   | Pre-deploy command | `pnpm --filter @ai-battle/db db:push`                                                               |
+   | Start command      | `pnpm --filter web start`                                                                           |
+
+   Render provides pnpm natively (it reads `pnpm-lock.yaml` + the `packageManager`
+   field) — do **not** run `corepack enable`, which fails on Render's read-only
+   `/usr/bin`.
+
 3. Add `DATABASE_URL` and `OPENROUTER_API_KEY` as environment variables.
-4. Deploy. Render runs: install → `prisma generate` → `next build`, then a
+4. Deploy. Render runs: install → `prisma generate` → `next build`, then the
    pre-deploy `prisma db push` (syncs the schema to Neon), then `next start`.
 
 **Always-on note:** the free web plan sleeps after ~15 min idle (cold start on
