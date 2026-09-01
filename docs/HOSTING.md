@@ -41,15 +41,16 @@ Set both in the Render dashboard, so they never live in git:
 2. In Render: **New + → Web Service**, pick this repo, runtime **Node**. There is
    no blueprint in the repo — the service is configured in the dashboard:
 
-   | Setting              | Value                                                                                              |
-   | -------------------- | -------------------------------------------------------------------------------------------------- |
-   | Build command        | `pnpm install --frozen-lockfile && pnpm --filter @ai-battle/db generate && pnpm --filter web build` |
-   | Pre-deploy command   | `pnpm --filter @ai-battle/db db:push`                                                              |
-   | Start command        | `pnpm --filter web start`                                                                          |
+   | Setting            | Value                                                                                               |
+   | ------------------ | --------------------------------------------------------------------------------------------------- |
+   | Build command      | `pnpm install --frozen-lockfile && pnpm --filter @ai-battle/db generate && pnpm --filter web build` |
+   | Pre-deploy command | `pnpm --filter @ai-battle/db db:push`                                                               |
+   | Start command      | `pnpm --filter web start`                                                                           |
 
    Render provides pnpm natively (it reads `pnpm-lock.yaml` + the `packageManager`
    field) — do **not** run `corepack enable`, which fails on Render's read-only
    `/usr/bin`.
+
 3. Add `DATABASE_URL` and `OPENROUTER_API_KEY` as environment variables.
 4. Deploy. Render runs: install → `prisma generate` → `next build`, then the
    pre-deploy `prisma db push` (syncs the schema to Neon), then `next start`.
